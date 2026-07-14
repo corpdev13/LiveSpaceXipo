@@ -1,0 +1,3392 @@
+
+
+
+
+
+
+
+
+
+
+{
+  "name": "spacex-ipo-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@radix-ui/react-accordion": "^1.2.0",
+    "@radix-ui/react-alert-dialog": "^1.1.0",
+    "@radix-ui/react-avatar": "^1.1.0",
+    "@radix-ui/react-dialog": "^1.1.0",
+    "@radix-ui/react-dropdown-menu": "^2.1.0",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-progress": "^1.1.0",
+    "@radix-ui/react-select": "^2.1.0",
+    "@radix-ui/react-separator": "^1.1.0",
+    "@radix-ui/react-slider": "^1.2.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-switch": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.1.0",
+    "@radix-ui/react-toast": "^1.2.0",
+    "@radix-ui/react-tooltip": "^1.1.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "lucide-react": "^0.460.0",
+    "tailwind-merge": "^2.5.0",
+    "tailwindcss-animate": "^1.0.7",
+    "framer-motion": "^11.0.0",
+    "recharts": "^2.12.0",
+    "zustand": "^5.0.0",
+    "date-fns": "^3.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "15.1.0"
+  }
+}
+
+
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  darkMode: ["class"],
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        spacex: {
+          black: "#0a0a0a",
+          dark: "#111111",
+          gray: "#1a1a1a",
+          blue: "#005288",
+          light: "#f5f5f5",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "pulse-glow": {
+          "0%, 100%": { boxShadow: "0 0 20px rgba(0, 82, 136, 0.3)" },
+          "50%": { boxShadow: "0 0 40px rgba(0, 82, 136, 0.6)" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "float": "float 3s ease-in-out infinite",
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+};
+
+export default config;
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 207 100% 27%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 207 100% 27%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 207 100% 27%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 207 100% 27%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* SpaceX Custom Styles */
+.glass-panel {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-spacex-blue to-cyan-400;
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+}
+
+.rocket-trail {
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 82, 136, 0.3) 50%, transparent 100%);
+}
+
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export function formatCurrency(amount: number, currency = "USD"): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+export function formatNumber(num: number): string {
+  if (num >= 1e12) return (num / 1e12).toFixed(2) + "T";
+  if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
+  if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
+  if (num >= 1e3) return (num / 1e3).toFixed(2) + "K";
+  return num.toString();
+}
+
+export function formatDate(date: Date | string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(new Date(date));
+}
+
+
+export interface IPOData {
+  companyName: string;
+  ticker: string;
+  exchange: string;
+  expectedPriceRange: [number, number];
+  sharesOffered: number;
+  marketCap: number;
+  listingDate: string;
+  status: "upcoming" | "open" | "priced" | "trading";
+}
+
+export interface ApplicationData {
+  id: string;
+  userId: string;
+  amount: number;
+  currency: string;
+  status: "pending" | "confirmed" | "allocated" | "rejected";
+  submittedAt: string;
+  allocationPercentage?: number;
+  allocatedShares?: number;
+}
+
+export const ipoData: IPOData = {
+  companyName: "Space Exploration Technologies Corp.",
+  ticker: "SPX",
+  exchange: "NASDAQ",
+  expectedPriceRange: [95, 105],
+  sharesOffered: 1_200_000_000,
+  marketCap: 120_000_000_000,
+  listingDate: "2026-06-12",
+  status: "open",
+};
+
+export const timelineEvents = [
+  {
+    date: "2026-05-15",
+    title: "SEC Filing",
+    description: "SpaceX filed S-1 registration statement with the SEC",
+    completed: true,
+  },
+  {
+    date: "2026-05-28",
+    title: "Price Range Set",
+    description: "Initial price range announced: $95 - $105 per share",
+    completed: true,
+  },
+  {
+    date: "2026-06-01",
+    title: "Book Building Opens",
+    description: "Institutional and retail investor applications open",
+    completed: true,
+  },
+  {
+    date: "2026-06-10",
+    title: "Application Deadline",
+    description: "Final deadline for retail investor applications",
+    completed: false,
+  },
+  {
+    date: "2026-06-11",
+    title: "Pricing",
+    description: "Final IPO price determined based on demand",
+    completed: false,
+  },
+  {
+    date: "2026-06-12",
+    title: "Listing Day",
+    description: "SPX begins trading on NASDAQ",
+    completed: false,
+  },
+];
+
+export const marketStats = [
+  { label: "Expected Valuation", value: "$120B", change: "+15%" },
+  { label: "Shares Offered", value: "1.2B", change: "Class A" },
+  { label: "Price Range", value: "$95 - $105", change: "Per Share" },
+  { label: "Retail Allocation", value: "15%", change: "Of Total" },
+];
+
+export const faqData = [
+  {
+    question: "What is the SpaceX IPO?",
+    answer:
+      "SpaceX is conducting an Initial Public Offering (IPO) to list its Class A common stock on the NASDAQ exchange under the ticker symbol SPX. This represents one of the largest IPOs in history with an expected valuation of approximately $120 billion.",
+  },
+  {
+    question: "How can I apply for shares?",
+    answer:
+      "Retail investors can apply through participating brokerages including Charles Schwab, Fidelity, Robinhood, SoFi, and ETRADE. Simply log into your brokerage account and search for the SpaceX IPO offering.",
+  },
+  {
+    question: "What is the minimum investment amount?",
+    answer:
+      "The minimum investment varies by brokerage but typically starts at $100. There is no guaranteed allocation, and you may receive partial allocation or no shares depending on demand.",
+  },
+  {
+    question: "When will I know my allocation?",
+    answer:
+      "Allocation notifications will be sent on June 12, 2026. If demand exceeds available shares, you may receive a partial allocation proportional to your request.",
+  },
+  {
+    question: "Can I cancel my application?",
+    answer:
+      "Yes, you can cancel your application before the signup deadline (June 10, 2026) through your brokerage platform. After the deadline, applications cannot be changed or cancelled.",
+  },
+  {
+    question: "What happens if I don't get an allocation?",
+    answer:
+      "If you don't receive an allocation, your funds will remain in your brokerage account and will not be debited. You can purchase shares on the open market once trading begins on June 12.",
+  },
+];
+
+export const mockApplications: ApplicationData[] = [
+  {
+    id: "app-001",
+    userId: "user-001",
+    amount: 5000,
+    currency: "USD",
+    status: "confirmed",
+    submittedAt: "2026-06-02T10:30:00Z",
+    allocationPercentage: 50,
+    allocatedShares: 25,
+  },
+  {
+    id: "app-002",
+    userId: "user-001",
+    amount: 10000,
+    currency: "USD",
+    status: "pending",
+    submittedAt: "2026-06-05T14:20:00Z",
+  },
+];
+
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
+import { Toaster } from "@/components/ui/toaster";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "SpaceX IPO | Invest in the Future of Space",
+  description:
+    "Apply for the SpaceX IPO - The largest IPO in history. Space Exploration Technologies Corp. listing on NASDAQ under ticker SPX.",
+  keywords: "SpaceX, IPO, SPX, NASDAQ, investment, space, stocks",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className="dark">
+      <body className={inter.className}>
+        <div className="relative min-h-screen bg-spacex-black text-white overflow-x-hidden">
+          <Navbar />
+          <main>{children}</main>
+          <Footer />
+          <Toaster />
+        </div>
+      </body>
+    </html>
+  );
+}
+
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+        spacex:
+          "bg-spacex-blue text-white hover:bg-spacex-blue/90 shadow-lg shadow-spacex-blue/25",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+Button.displayName = "Button";
+
+export { Button, buttonVariants };
+
+
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-lg border bg-card text-card-foreground shadow-sm",
+      className
+    )}
+    {...props}
+  />
+));
+Card.displayName = "Card";
+
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    {...props}
+  />
+));
+CardHeader.displayName = "CardHeader";
+
+const CardTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={cn(
+      "text-2xl font-semibold leading-none tracking-tight",
+      className
+    )}
+    {...props}
+  />
+));
+CardTitle.displayName = "CardTitle";
+
+const CardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+));
+CardDescription.displayName = "CardDescription";
+
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+));
+CardContent.displayName = "CardContent";
+
+const CardFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex items-center p-6 pt-0", className)}
+    {...props}
+  />
+));
+CardFooter.displayName = "CardFooter";
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+Input.displayName = "Input";
+
+export { Input };
+
+
+"use client";
+
+import * as React from "react";
+import * as LabelPrimitive from "@radix-ui/react-label";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
+
+const labelVariants = cva(
+  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+);
+
+const Label = React.forwardRef<
+  React.ElementRef<typeof LabelPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
+    VariantProps<typeof labelVariants>
+>(({ className, ...props }, ref) => (
+  <LabelPrimitive.Root
+    ref={ref}
+    className={cn(labelVariants(), className)}
+    {...props}
+  />
+));
+Label.displayName = LabelPrimitive.Root.displayName;
+
+export { Label };
+
+
+"use client";
+
+import * as React from "react";
+import * as ProgressPrimitive from "@radix-ui/react-progress";
+import { cn } from "@/lib/utils";
+
+const Progress = React.forwardRef<
+  React.ElementRef<typeof ProgressPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>
+>(({ className, value, ...props }, ref) => (
+  <ProgressPrimitive.Root
+    ref={ref}
+    className={cn(
+      "relative h-4 w-full overflow-hidden rounded-full bg-secondary",
+      className
+    )}
+    {...props}
+  >
+    <ProgressPrimitive.Indicator
+      className="h-full w-full flex-1 bg-spacex-blue transition-all"
+      style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+    />
+  </ProgressPrimitive.Root>
+));
+Progress.displayName = ProgressPrimitive.Root.displayName;
+
+export { Progress };
+
+"use client";
+
+import * as React from "react";
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const Accordion = AccordionPrimitive.Root;
+
+const AccordionItem = React.forwardRef<
+  React.ElementRef<typeof AccordionPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>
+>(({ className, ...props }, ref) => (
+  <AccordionPrimitive.Item
+    ref={ref}
+    className={cn("border-b", className)}
+    {...props}
+  />
+));
+AccordionItem.displayName = "AccordionItem";
+
+const AccordionTrigger = React.forwardRef<
+  React.ElementRef<typeof AccordionPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>
+>(({ className, children, ...props }, ref) => (
+  <AccordionPrimitive.Header className="flex">
+    <AccordionPrimitive.Trigger
+      ref={ref}
+      className={cn(
+        "flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+    </AccordionPrimitive.Trigger>
+  </AccordionPrimitive.Header>
+));
+AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName;
+
+const AccordionContent = React.forwardRef<
+  React.ElementRef<typeof AccordionPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <AccordionPrimitive.Content
+    ref={ref}
+    className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+    {...props}
+  >
+    <div className={cn("pb-4 pt-0", className)}>{children}</div>
+  </AccordionPrimitive.Content>
+));
+
+AccordionContent.displayName = AccordionPrimitive.Content.displayName;
+
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent };
+
+"use client";
+
+import * as React from "react";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
+import { cn } from "@/lib/utils";
+
+const Tabs = TabsPrimitive.Root;
+
+const TabsList = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.List>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.List
+    ref={ref}
+    className={cn(
+      "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
+      className
+    )}
+    {...props}
+  />
+));
+TabsList.displayName = TabsPrimitive.List.displayName;
+
+const TabsTrigger = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+      className
+    )}
+    {...props}
+  />
+));
+TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
+
+const TabsContent = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Content
+    ref={ref}
+    className={cn(
+      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      className
+    )}
+    {...props}
+  />
+));
+TabsContent.displayName = TabsPrimitive.Content.displayName;
+
+export { Tabs, TabsList, TabsTrigger, TabsContent };
+
+
+"use client";
+
+import * as React from "react";
+import * as ToastPrimitives from "@radix-ui/react-toast";
+import { cva, type VariantProps } from "class-variance-authority";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const ToastProvider = ToastPrimitives.Provider;
+
+const ToastViewport = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Viewport>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Viewport>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Viewport
+    ref={ref}
+    className={cn(
+      "fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]",
+      className
+    )}
+    {...props}
+  />
+));
+ToastViewport.displayName = ToastPrimitives.Viewport.displayName;
+
+const toastVariants = cva(
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+  {
+    variants: {
+      variant: {
+        default: "border bg-background text-foreground",
+        destructive:
+          "destructive group border-destructive bg-destructive text-destructive-foreground",
+        success: "border-green-500 bg-green-500/10 text-green-500",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+);
+
+const Toast = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Root>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
+    VariantProps<typeof toastVariants>
+>(({ className, variant, ...props }, ref) => {
+  return (
+    <ToastPrimitives.Root
+      ref={ref}
+      className={cn(toastVariants({ variant }), className)}
+      {...props}
+    />
+  );
+});
+Toast.displayName = ToastPrimitives.Root.displayName;
+
+const ToastAction = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Action>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Action>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Action
+    ref={ref}
+    className={cn(
+      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive",
+      className
+    )}
+    {...props}
+  />
+));
+ToastAction.displayName = ToastPrimitives.Action.displayName;
+
+const ToastClose = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Close>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Close
+    ref={ref}
+    className={cn(
+      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600",
+      className
+    )}
+    toast-close=""
+    {...props}
+  >
+    <X className="h-4 w-4" />
+  </ToastPrimitives.Close>
+));
+ToastClose.displayName = ToastPrimitives.Close.displayName;
+
+const ToastTitle = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Title>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Title>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Title
+    ref={ref}
+    className={cn("text-sm font-semibold", className)}
+    {...props}
+  />
+));
+ToastTitle.displayName = ToastPrimitives.Title.displayName;
+
+const ToastDescription = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Description>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Description>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Description
+    ref={ref}
+    className={cn("text-sm opacity-90", className)}
+    {...props}
+  />
+));
+ToastDescription.displayName = ToastPrimitives.Description.displayName;
+
+type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>;
+
+type ToastActionElement = React.ReactElement<typeof ToastAction>;
+
+export {
+  type ToastProps,
+  type ToastActionElement,
+  ToastProvider,
+  ToastViewport,
+  Toast,
+  ToastTitle,
+  ToastDescription,
+  ToastClose,
+  ToastAction,
+};
+
+
+"use client";
+
+import {
+  Toast,
+  ToastClose,
+  ToastDescription,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+} from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
+
+export function Toaster() {
+  const { toasts } = useToast();
+
+  return (
+    <ToastProvider>
+      {toasts.map(function ({ id, title, description, action, ...props }) {
+        return (
+          <Toast key={id} {...props}>
+            <div className="grid gap-1">
+              {title && <ToastTitle>{title}</ToastTitle>}
+              {description && (
+                <ToastDescription>{description}</ToastDescription>
+              )}
+            </div>
+            {action}
+            <ToastClose />
+          </Toast>
+        );
+      })}
+      <ToastViewport />
+    </ToastProvider>
+  );
+}
+
+
+"use client";
+
+import * as React from "react";
+import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
+
+const TOAST_LIMIT = 1;
+const TOAST_REMOVE_DELAY = 1000000;
+
+type ToasterToast = ToastProps & {
+  id: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: ToastActionElement;
+};
+
+const actionTypes = {
+  ADD_TOAST: "ADD_TOAST",
+  UPDATE_TOAST: "UPDATE_TOAST",
+  DISMISS_TOAST: "DISMISS_TOAST",
+  REMOVE_TOAST: "REMOVE_TOAST",
+} as const;
+
+let count = 0;
+
+function genId() {
+  count = (count + 1) % Number.MAX_SAFE_INTEGER;
+  return count.toString();
+}
+
+type ActionType = typeof actionTypes;
+
+type Action =
+  | {
+      type: ActionType["ADD_TOAST"];
+      toast: ToasterToast;
+    }
+  | {
+      type: ActionType["UPDATE_TOAST"];
+      toast: Partial<ToasterToast>;
+    }
+  | {
+      type: ActionType["DISMISS_TOAST"];
+      toastId?: ToasterToast["id"];
+    }
+  | {
+      type: ActionType["REMOVE_TOAST"];
+      toastId?: ToasterToast["id"];
+    };
+
+interface State {
+  toasts: ToasterToast[];
+}
+
+const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+const addToRemoveQueue = (toastId: string) => {
+  if (toastTimeouts.has(toastId)) {
+    return;
+  }
+
+  const timeout = setTimeout(() => {
+    toastTimeouts.delete(toastId);
+    dispatch({
+      type: "REMOVE_TOAST",
+      toastId: toastId,
+    });
+  }, TOAST_REMOVE_DELAY);
+
+  toastTimeouts.set(toastId, timeout);
+};
+
+export const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case "ADD_TOAST":
+      return {
+        ...state,
+        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+      };
+
+    case "UPDATE_TOAST":
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === action.toast.id ? { ...t, ...action.toast } : t
+        ),
+      };
+
+    case "DISMISS_TOAST": {
+      const { toastId } = action;
+
+      if (toastId) {
+        addToRemoveQueue(toastId);
+      } else {
+        state.toasts.forEach((toast) => {
+          addToRemoveQueue(toast.id);
+        });
+      }
+
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === toastId || toastId === undefined
+            ? {
+                ...t,
+                open: false,
+              }
+            : t
+        ),
+      };
+    }
+    case "REMOVE_TOAST":
+      if (action.toastId === undefined) {
+        return {
+          ...state,
+          toasts: [],
+        };
+      }
+      return {
+        ...state,
+        toasts: state.toasts.filter((t) => t.id !== action.toastId),
+      };
+  }
+};
+
+const listeners: Array<(state: State) => void> = [];
+
+let memoryState: State = { toasts: [] };
+
+function dispatch(action: Action) {
+  memoryState = reducer(memoryState, action);
+  listeners.forEach((listener) => {
+    listener(memoryState);
+  });
+}
+
+type Toast = Omit<ToasterToast, "id">;
+
+function toast({ ...props }: Toast) {
+  const id = genId();
+
+  const update = (props: ToasterToast) =>
+    dispatch({
+      type: "UPDATE_TOAST",
+      toast: { ...props, id },
+    });
+  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
+
+  dispatch({
+    type: "ADD_TOAST",
+    toast: {
+      ...props,
+      id,
+      open: true,
+      onOpenChange: (open) => {
+        if (!open) dismiss();
+      },
+    },
+  });
+
+  return {
+    id: id,
+    dismiss,
+    update,
+  };
+}
+
+function useToast() {
+  const [state, setState] = React.useState<State>(memoryState);
+
+  React.useEffect(() => {
+    listeners.push(setState);
+    return () => {
+      const index = listeners.indexOf(setState);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    };
+  }, [state]);
+
+  return {
+    ...state,
+    toast,
+    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+  };
+}
+
+export { useToast, toast };
+
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { Rocket, Menu, X, TrendingUp, FileText, HelpCircle, LayoutDashboard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const navLinks = [
+  { href: "/", label: "Home", icon: Rocket },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/apply", label: "Apply", icon: FileText },
+  { href: "/portfolio", label: "Portfolio", icon: TrendingUp },
+  { href: "/faq", label: "FAQ", icon: HelpCircle },
+];
+
+export function Navbar() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-spacex-black/80 backdrop-blur-xl">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="relative">
+              <Rocket className="h-8 w-8 text-spacex-blue transition-transform group-hover:-translate-y-1" />
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-spacex-blue rounded-full animate-pulse" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-lg font-bold tracking-tight text-white">
+                SpaceX<span className="text-spacex-blue">IPO</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground -mt-1 tracking-widest uppercase">
+                NASDAQ: SPX
+              </span>
+            </div>
+          </Link>
+
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center gap-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+              >
+                <link.icon className="h-4 w-4" />
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="hidden md:flex items-center gap-3">
+            <Button variant="ghost" size="sm" className="text-muted-foreground">
+              Sign In
+            </Button>
+            <Button variant="spacex" size="sm" className="animate-pulse-glow">
+              Apply Now
+            </Button>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2 text-white"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      <div
+        className={cn(
+          "md:hidden border-t border-white/10 bg-spacex-black/95 backdrop-blur-xl transition-all duration-300 overflow-hidden",
+          isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        )}
+      >
+        <div className="px-4 py-4 space-y-2">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+            >
+              <link.icon className="h-5 w-5" />
+              {link.label}
+            </Link>
+          ))}
+          <div className="pt-4 border-t border-white/10 space-y-2">
+            <Button variant="ghost" className="w-full justify-center">
+              Sign In
+            </Button>
+            <Button variant="spacex" className="w-full justify-center">
+              Apply Now
+            </Button>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+"use client";
+
+import { motion } from "framer-motion";
+import { Rocket, ArrowRight, TrendingUp, Shield, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
+export function HeroSection() {
+  return (
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+      {/* Background Effects */}
+      <div className="absolute inset-0 hero-gradient" />
+      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1516849841032-87cbac4d88f7?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-10" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-spacex-blue/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+
+      {/* Stars */}
+      <div className="absolute inset-0 overflow-hidden">
+        {[...Array(50)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-white rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              opacity: [0, 1, 0],
+              scale: [0, 1, 0],
+            }}
+            transition={{
+              duration: Math.random() * 3 + 2,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-spacex-blue/10 border border-spacex-blue/30 text-spacex-blue text-sm font-medium mb-8">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-spacex-blue opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-spacex-blue" />
+            </span>
+            IPO Now Open — Listing June 12, 2026
+          </div>
+
+          {/* Main Title */}
+          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
+            <span className="text-white">Invest in the</span>
+            <br />
+            <span className="gradient-text">Future of Space</span>
+          </h1>
+
+          <p className="mx-auto max-w-2xl text-lg sm:text-xl text-muted-foreground mb-10 leading-relaxed">
+            SpaceX is going public. Join the largest IPO in history and own a piece
+            of humanity's multi-planetary future. Ticker:{" "}
+            <span className="text-spacex-blue font-mono font-bold">SPX</span> on
+            NASDAQ.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+            <Link href="/apply">
+              <Button
+                size="lg"
+                variant="spacex"
+                className="text-lg px-8 py-6 animate-pulse-glow group"
+              >
+                Apply for IPO
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-lg px-8 py-6 border-white/20 hover:bg-white/5"
+              >
+                View Dashboard
+              </Button>
+            </Link>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+            {[
+              {
+                icon: TrendingUp,
+                label: "Expected Valuation",
+                value: "$120B",
+                sub: "Largest IPO in history",
+              },
+              {
+                icon: Shield,
+                label: "Price Range",
+                value: "$95 - $105",
+                sub: "Per share",
+              },
+              {
+                icon: Clock,
+                label: "Days to Listing",
+                value: "2 Days",
+                sub: "June 12, 2026",
+              },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 + i * 0.1 }}
+                className="glass-panel p-6 text-left group hover:border-spacex-blue/50 transition-colors"
+              >
+                <stat.icon className="h-6 w-6 text-spacex-blue mb-3" />
+                <div className="text-2xl font-bold text-white mb-1">
+                  {stat.value}
+                </div>
+                <div className="text-sm font-medium text-white mb-1">
+                  {stat.label}
+                </div>
+                <div className="text-xs text-muted-foreground">{stat.sub}</div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <div className="w-6 h-10 rounded-full border-2 border-white/30 flex justify-center pt-2">
+            <motion.div
+              className="w-1.5 h-1.5 bg-white rounded-full"
+              animate={{ opacity: [1, 0], y: [0, 12] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+
+"use client";
+
+import { motion } from "framer-motion";
+import { Check, Circle } from "lucide-react";
+import { timelineEvents } from "@/lib/data";
+import { formatDate } from "@/lib/utils";
+
+export function IPOTimeline() {
+  return (
+    <section className="py-24 relative">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            IPO Timeline
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Track the key milestones leading up to the SpaceX listing on NASDAQ
+          </p>
+        </div>
+
+        <div className="relative">
+          {/* Timeline Line */}
+          <div className="absolute left-4 sm:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-spacex-blue via-spacex-blue/50 to-transparent" />
+
+          <div className="space-y-12">
+            {timelineEvents.map((event, index) => (
+              <motion.div
+                key={event.date}
+                initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className={`relative flex items-start gap-8 ${
+                  index % 2 === 0
+                    ? "sm:flex-row"
+                    : "sm:flex-row-reverse"
+                }`}
+              >
+                {/* Content */}
+                <div className="flex-1 sm:text-right pl-12 sm:pl-0 sm:pr-12">
+                  <div
+                    className={`glass-panel p-6 ${
+                      index % 2 === 0 ? "sm:ml-auto" : "sm:mr-auto"
+                    } max-w-md`}
+                  >
+                    <div className="text-spacex-blue font-mono text-sm mb-2">
+                      {formatDate(event.date)}
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">
+                      {event.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {event.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Node */}
+                <div className="absolute left-4 sm:left-1/2 -translate-x-1/2 mt-6">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                      event.completed
+                        ? "bg-spacex-blue border-spacex-blue"
+                        : "bg-spacex-black border-white/30"
+                    }`}
+                  >
+                    {event.completed ? (
+                      <Check className="h-4 w-4 text-white" />
+                    ) : (
+                      <Circle className="h-4 w-4 text-white/50" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Spacer for alternating layout */}
+                <div className="flex-1 hidden sm:block" />
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+"use client";
+
+import { motion } from "framer-motion";
+import { marketStats } from "@/lib/data";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+const chartData = [
+  { time: "9:30", price: 95.2, volume: 1200000 },
+  { time: "10:00", price: 97.8, volume: 2800000 },
+  { time: "10:30", price: 99.5, volume: 3500000 },
+  { time: "11:00", price: 101.2, volume: 4200000 },
+  { time: "11:30", price: 100.8, volume: 3100000 },
+  { time: "12:00", price: 102.5, volume: 2800000 },
+  { time: "12:30", price: 103.1, volume: 1900000 },
+  { time: "13:00", price: 102.8, volume: 2200000 },
+  { time: "13:30", price: 104.2, volume: 3500000 },
+  { time: "14:00", price: 105.5, volume: 4800000 },
+  { time: "14:30", price: 104.8, volume: 3200000 },
+  { time: "15:00", price: 106.2, volume: 4100000 },
+  { time: "15:30", price: 107.8, volume: 5200000 },
+  { time: "16:00", price: 108.5, volume: 3800000 },
+];
+
+export function MarketData() {
+  return (
+    <section className="py-24 bg-spacex-dark/50">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Market Data
+          </h2>
+          <p className="text-muted-foreground">
+            Real-time IPO pricing and demand indicators
+          </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+          {marketStats.map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="glass-panel p-6 text-center"
+            >
+              <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
+                {stat.value}
+              </div>
+              <div className="text-sm text-muted-foreground mb-2">
+                {stat.label}
+              </div>
+              <div
+                className={`text-xs font-medium ${
+                  stat.change.includes("+")
+                    ? "text-green-400"
+                    : "text-spacex-blue"
+                }`}
+              >
+                {stat.change}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="glass-panel p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-white">
+              Price Discovery Simulation
+            </h3>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="w-3 h-3 rounded-full bg-spacex-blue" />
+              SPX Price
+            </div>
+          </div>
+          <div className="h-[400px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="#005288"
+                      stopOpacity={0.3}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="#005288"
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,0.05)"
+                />
+                <XAxis
+                  dataKey="time"
+                  stroke="rgba(255,255,255,0.3)"
+                  fontSize={12}
+                />
+                <YAxis
+                  domain={[90, 115]}
+                  stroke="rgba(255,255,255,0.3)"
+                  fontSize={12}
+                  tickFormatter={(value) => `$${value}`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1a1a1a",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "8px",
+                  }}
+                  labelStyle={{ color: "#fff" }}
+                  formatter={(value: number) => [`$${value}`, "Price"]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="price"
+                  stroke="#005288"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#colorPrice)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+
+"use client";
+
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Calculator, Info } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { formatCurrency } from "@/lib/utils";
+
+export function AllocationCalculator() {
+  const [investment, setInvestment] = useState(5000);
+  const [expectedPrice, setExpectedPrice] = useState(100);
+  const allocationRate = 0.5; // 50% allocation assumption
+
+  const estimatedShares = Math.floor(
+    (investment * allocationRate) / expectedPrice
+  );
+  const allocatedValue = estimatedShares * expectedPrice;
+
+  return (
+    <section className="py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left: Calculator */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <Calculator className="h-8 w-8 text-spacex-blue" />
+              <h2 className="text-3xl font-bold text-white">
+                Allocation Calculator
+              </h2>
+            </div>
+            <p className="text-muted-foreground mb-8">
+              Estimate your potential share allocation based on investment amount
+              and expected IPO price. Actual allocation depends on total demand.
+            </p>
+
+            <div className="glass-panel p-8 space-y-8">
+              {/* Investment Slider */}
+              <div>
+                <div className="flex justify-between mb-4">
+                  <label className="text-sm font-medium text-white">
+                    Investment Amount
+                  </label>
+                  <span className="text-spacex-blue font-mono font-bold">
+                    {formatCurrency(investment)}
+                  </span>
+                </div>
+                <Slider
+                  value={[investment]}
+                  onValueChange={(value) => setInvestment(value[0])}
+                  max={100000}
+                  min={100}
+                  step={100}
+                  className="w-full"
+                />
+                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                  <span>$100</span>
+                  <span>$100,000</span>
+                </div>
+              </div>
+
+              {/* Price Slider */}
+              <div>
+                <div className="flex justify-between mb-4">
+                  <label className="text-sm font-medium text-white">
+                    Expected Price per Share
+                  </label>
+                  <span className="text-spacex-blue font-mono font-bold">
+                    {formatCurrency(expectedPrice)}
+                  </span>
+                </div>
+                <Slider
+                  value={[expectedPrice]}
+                  onValueChange={(value) => setExpectedPrice(value[0])}
+                  max={150}
+                  min={80}
+                  step={1}
+                  className="w-full"
+                />
+                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                  <span>$80</span>
+                  <span>$150</span>
+                </div>
+              </div>
+
+              {/* Allocation Rate */}
+              <div className="flex items-center gap-2 p-4 rounded-lg bg-white/5 border border-white/10">
+                <Info className="h-5 w-5 text-spacex-blue shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  Assuming {allocationRate * 100}% allocation rate based on
+                  current demand projections. Actual rate may vary.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Right: Results */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="lg:pl-12"
+          >
+            <div className="glass-panel p-8 text-center">
+              <h3 className="text-lg font-medium text-muted-foreground mb-8">
+                Estimated Allocation
+              </h3>
+
+              <div className="space-y-8">
+                <div>
+                  <div className="text-5xl sm:text-6xl font-bold text-white mb-2">
+                    {estimatedShares.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Shares Allocated
+                  </div>
+                </div>
+
+                <div className="w-full h-px bg-white/10" />
+
+                <div>
+                  <div className="text-3xl font-bold text-spacex-blue mb-2">
+                    {formatCurrency(allocatedValue)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Allocated Value
+                  </div>
+                </div>
+
+                <div className="w-full h-px bg-white/10" />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg bg-white/5">
+                    <div className="text-lg font-bold text-white">
+                      {formatCurrency(investment - allocatedValue)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Returned Cash
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-lg bg-white/5">
+                    <div className="text-lg font-bold text-green-400">
+                      {(allocationRate * 100).toFixed(0)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Allocation Rate
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <p className="mt-6 text-xs text-muted-foreground">
+                This is an estimate only. Actual allocation depends on final
+                demand and available supply.
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+"use client";
+
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Rocket, Check, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
+
+export function ApplicationForm() {
+  const [step, setStep] = useState(1);
+  const [amount, setAmount] = useState(5000);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    setIsSubmitting(false);
+    setIsSuccess(true);
+    toast({
+      title: "Application Submitted",
+      description: `Your application for ${formatCurrency(amount)} has been received.`,
+      variant: "success",
+    });
+  };
+
+  if (isSuccess) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="glass-panel p-12 text-center max-w-lg mx-auto"
+      >
+        <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
+          <Check className="h-10 w-10 text-green-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-4">
+          Application Confirmed
+        </h2>
+        <p className="text-muted-foreground mb-6">
+          Your IPO application for{" "}
+          <span className="text-white font-bold">
+            {formatCurrency(amount)}
+          </span>{" "}
+          has been submitted successfully. You will receive a confirmation email
+          shortly.
+        </p>
+        <div className="p-4 rounded-lg bg-white/5 border border-white/10 mb-6 text-left">
+          <div className="flex justify-between mb-2">
+            <span className="text-sm text-muted-foreground">Reference ID</span>
+            <span className="text-sm font-mono text-white">SPX-2026-78432</span>
+          </div>
+          <div className="flex justify-between mb-2">
+            <span className="text-sm text-muted-foreground">Amount</span>
+            <span className="text-sm font-bold text-white">
+              {formatCurrency(amount)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-muted-foreground">Status</span>
+            <span className="text-sm text-yellow-400">Pending Allocation</span>
+          </div>
+        </div>
+        <Button variant="spacex" onClick={() => window.location.href = "/portfolio"}>
+          View Portfolio
+        </Button>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-panel p-8 max-w-2xl mx-auto"
+    >
+      {/* Progress */}
+      <div className="flex items-center gap-4 mb-8">
+        {[1, 2, 3].map((s) => (
+          <div key={s} className="flex-1">
+            <div
+              className={`h-2 rounded-full transition-colors ${
+                s <= step ? "bg-spacex-blue" : "bg-white/10"
+              }`}
+            />
+          </div>
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        {step === 1 && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-6"
+          >
+            <div className="text-center mb-8">
+              <Rocket className="h-12 w-12 text-spacex-blue mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Investment Amount
+              </h2>
+              <p className="text-muted-foreground">
+                How much would you like to invest in the SpaceX IPO?
+              </p>
+            </div>
+
+            <div className="text-center py-8">
+              <div className="text-5xl font-bold text-white mb-2">
+                {formatCurrency(amount)}
+              </div>
+              <div className="text-sm text-muted-foreground mb-8">
+                Investment Amount
+              </div>
+              <Slider
+                value={[amount]}
+                onValueChange={(value) => setAmount(value[0])}
+                max={100000}
+                min={100}
+                step={100}
+                className="w-full mb-4"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>$100</span>
+                <span>$100,000</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {[1000, 5000, 10000, 25000, 50000, 100000].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setAmount(val)}
+                  className={`p-3 rounded-lg border text-sm font-medium transition-colors ${
+                    amount === val
+                      ? "border-spacex-blue bg-spacex-blue/10 text-spacex-blue"
+                      : "border-white/10 text-muted-foreground hover:border-white/30 hover:text-white"
+                  }
+
+"use client";
+
+import * as React from "react";
+import * as SliderPrimitive from "@radix-ui/react-slider";
+import { cn } from "@/lib/utils";
+
+const Slider = React.forwardRef<
+  React.ElementRef<typeof SliderPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <SliderPrimitive.Root
+    ref={ref}
+    className={cn(
+      "relative flex w-full touch-none select-none items-center",
+      className
+    )}
+    {...props}
+  >
+    <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
+      <SliderPrimitive.Range className="absolute h-full bg-spacex-blue" />
+    </SliderPrimitive.Track>
+    <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border-2 border-spacex-blue bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
+  </SliderPrimitive.Root>
+));
+Slider.displayName = SliderPrimitive.Root.displayName;
+
+export { Slider };
+
+
+"use client";
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Rocket, Check, AlertCircle, ChevronRight, ChevronLeft, Shield, Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
+
+export function ApplicationForm() {
+  const [step, setStep] = useState(1);
+  const [amount, setAmount] = useState(5000);
+  const [brokerage, setBrokerage] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const { toast } = useToast();
+
+  const brokerages = [
+    "Charles Schwab",
+    "Fidelity",
+    "Robinhood",
+    "SoFi",
+    "ETRADE",
+    "TD Ameritrade",
+    "Webull",
+    "Interactive Brokers",
+  ];
+
+  const handleNext = () => {
+    if (step < 3) setStep(step + 1);
+  };
+
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+
+    setIsSubmitting(false);
+    setIsSuccess(true);
+    toast({
+      title: "Application Submitted Successfully",
+      description: `Your application for ${formatCurrency(amount)} has been received. Reference: SPX-2026-${Math.floor(Math.random() * 90000) + 10000}`,
+      variant: "success",
+    });
+  };
+
+  if (isSuccess) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="glass-panel p-8 sm:p-12 text-center max-w-lg mx-auto"
+      >
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 15 }}
+          className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6"
+        >
+          <Check className="h-10 w-10 text-green-500" />
+        </motion.div>
+        <h2 className="text-2xl font-bold text-white mb-4">
+          Application Confirmed
+        </h2>
+        <p className="text-muted-foreground mb-6">
+          Your IPO application for{" "}
+          <span className="text-white font-bold">
+            {formatCurrency(amount)}
+          </span>{" "}
+          has been submitted successfully. You will receive a confirmation email
+          shortly.
+        </p>
+        <div className="p-4 rounded-lg bg-white/5 border border-white/10 mb-6 text-left space-y-3">
+          <div className="flex justify-between">
+            <span className="text-sm text-muted-foreground">Reference ID</span>
+            <span className="text-sm font-mono text-white">SPX-2026-{Math.floor(Math.random() * 90000) + 10000}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-muted-foreground">Amount</span>
+            <span className="text-sm font-bold text-white">
+              {formatCurrency(amount)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-muted-foreground">Brokerage</span>
+            <span className="text-sm text-white">{brokerage}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-muted-foreground">Status</span>
+            <span className="text-sm text-yellow-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
+              Pending Allocation
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button variant="spacex" onClick={() => window.location.href = "/portfolio"} className="flex-1">
+            View Portfolio
+          </Button>
+          <Button variant="outline" onClick={() => window.location.href = "/dashboard"} className="flex-1 border-white/20">
+            Go to Dashboard
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-panel p-6 sm:p-8 max-w-2xl mx-auto"
+    >
+      {/* Progress Steps */}
+      <div className="flex items-center gap-4 mb-8">
+        {[1, 2, 3].map((s) => (
+          <div key={s} className="flex-1 flex items-center gap-2">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                s < step
+                  ? "bg-green-500 text-white"
+                  : s === step
+                  ? "bg-spacex-blue text-white"
+                  : "bg-white/10 text-muted-foreground"
+              }`}
+            >
+              {s < step ? <Check className="h-4 w-4" /> : s}
+            </div>
+            <div
+              className={`flex-1 h-1 rounded-full ${
+                s < step ? "bg-green-500" : "bg-white/10"
+              }`}
+            />
+          </div>
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <AnimatePresence mode="wait">
+          {step === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-6"
+            >
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 rounded-full bg-spacex-blue/20 flex items-center justify-center mx-auto mb-4">
+                  <Wallet className="h-8 w-8 text-spacex-blue" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  Investment Amount
+                </h2>
+                <p className="text-muted-foreground">
+                  How much would you like to invest in the SpaceX IPO?
+                </p>
+              </div>
+
+              <div className="text-center py-6">
+                <motion.div
+                  key={amount}
+                  initial={{ scale: 1.1 }}
+                  animate={{ scale: 1 }}
+                  className="text-5xl font-bold text-white mb-2"
+                >
+                  {formatCurrency(amount)}
+                </motion.div>
+                <div className="text-sm text-muted-foreground mb-8">
+                  Investment Amount
+                </div>
+                <Slider
+                  value={[amount]}
+                  onValueChange={(value) => setAmount(value[0])}
+                  max={100000}
+                  min={100}
+                  step={100}
+                  className="w-full mb-4"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>$100</span>
+                  <span>$100,000</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {[1000, 2500, 5000, 10000, 25000, 50000].map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setAmount(val)}
+                    className={`p-2 rounded-lg border text-xs sm:text-sm font-medium transition-all ${
+                      amount === val
+                        ? "border-spacex-blue bg-spacex-blue/10 text-spacex-blue shadow-lg shadow-spacex-blue/20"
+                        : "border-white/10 text-muted-foreground hover:border-white/30 hover:text-white"
+                    }`}
+                  >
+                    ${(val / 1000).toFixed(0)}K
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+                <AlertCircle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+                <p className="text-sm text-muted-foreground">
+                  Minimum investment is $100. There is no guaranteed allocation.
+                  If demand exceeds supply, you may receive a partial allocation
+                  or no shares.
+                </p>
+              </div>
+
+              <div className="flex justify-end">
+                <Button type="button" variant="spacex" onClick={handleNext}>
+                  Continue
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-6"
+            >
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 rounded-full bg-spacex-blue/20 flex items-center justify-center mx-auto mb-4">
+                  <Shield className="h-8 w-8 text-spacex-blue" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  Brokerage Account
+                </h2>
+                <p className="text-muted-foreground">
+                  Select your brokerage and enter your account details
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-white mb-2 block">Select Brokerage</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {brokerages.map((b) => (
+                      <button
+                        key={b}
+                        type="button"
+                        onClick={() => setBrokerage(b)}
+                        className={`p-3 rounded-lg border text-sm font-medium transition-all ${
+                          brokerage === b
+                            ? "border-spacex-blue bg-spacex-blue/10 text-spacex-blue"
+                            : "border-white/10 text-muted-foreground hover:border-white/30 hover:text-white"
+                        }`}
+                      >
+                        {b}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="account" className="text-white mb-2 block">
+                    Account Number
+                  </Label>
+                  <Input
+                    id="account"
+                    placeholder="Enter your brokerage account number"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-muted-foreground"
+                  />
+                </div>
+
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/5 border border-white/10">
+                  <Shield className="h-5 w-5 text-spacex-blue shrink-0 mt-0.5" />
+                  <p className="text-sm text-muted-foreground">
+                    Your account information is encrypted and secure. We only use
+                    this to verify your eligibility and process your application.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-between">
+                <Button type="button" variant="outline" onClick={handleBack} className="border-white/20">
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Back
+                </Button>
+                <Button
+                  type="button"
+                  variant="spacex"
+                  onClick={handleNext}
+                  disabled={!brokerage || !accountNumber}
+                >
+                  Continue
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 3 && (
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-6"
+            >
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 rounded-full bg-spacex-blue/20 flex items-center justify-center mx-auto mb-4">
+                  <Rocket className="h-8 w-8 text-spacex-blue" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  Review & Submit
+                </h2>
+                <p className="text-muted-foreground">
+                  Review your application details before submitting
+                </p>
+              </div>
+
+              <div className="space-y-4 p-6 rounded-lg bg-white/5 border border-white/10">
+                <div className="flex justify-between items-center pb-4 border-b border-white/10">
+                  <span className="text-muted-foreground">Investment Amount</span>
+                  <span className="text-xl font-bold text-white">
+                    {formatCurrency(amount)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-4 border-b border-white/10">
+                  <span className="text-muted-foreground">Brokerage</span>
+                  <span className="text-white font-medium">{brokerage}</span>
+                </div>
+                <div className="flex justify-between items-center pb-4 border-b border-white/10">
+                  <span className="text-muted-foreground">Account</span>
+                  <span className="text-white font-mono">
+                    ****{accountNumber.slice(-4)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Expected Shares</span>
+                  <span className="text-white font-medium">
+                    ~{Math.floor(amount / 100)} shares @ $100 est.
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-spacex-blue/5 border border-spacex-blue/20">
+                <AlertCircle className="h-5 w-5 text-spacex-blue shrink-0 mt-0.5" />
+                <div className="text-sm text-muted-foreground">
+                  <p className="text-white font-medium mb-1">Important Notice</p>
+                  <p>
+                    By submitting this application, you acknowledge that:
+                  </p>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>Allocation is not guaranteed</li>
+                    <li>Funds will be held until allocation is determined</li>
+                    <li>You have read and agree to the IPO terms and conditions</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex justify-between">
+                <Button type="button" variant="outline" onClick={handleBack} className="border-white/20">
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Back
+                </Button>
+                <Button
+                  type="submit"
+                  variant="spacex"
+                  disabled={isSubmitting}
+                  className="animate-pulse-glow"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="mr-2 h-4 w-4 border-2 border-white/30 border-t-white rounded-full"
+                      />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      Submit Application
+                      <Rocket className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </form>
+    </motion.div>
+  );
+}
+
+import Link from "next/link";
+import { Rocket, Github, Twitter, Linkedin } from "lucide-react";
+
+export function Footer() {
+  return (
+    <footer className="border-t border-white/10 bg-spacex-black py-12">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          {/* Brand */}
+          <div className="md:col-span-1">
+            <Link href="/" className="flex items-center gap-2 mb-4">
+              <Rocket className="h-6 w-6 text-spacex-blue" />
+              <span className="text-lg font-bold text-white">
+                SpaceX<span className="text-spacex-blue">IPO</span>
+              </span>
+            </Link>
+            <p className="text-sm text-muted-foreground">
+              The official IPO application platform for Space Exploration
+              Technologies Corp. Invest in the future of space.
+            </p>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h4 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
+              Platform
+            </h4>
+            <ul className="space-y-2">
+              {[
+                { href: "/dashboard", label: "Dashboard" },
+                { href: "/apply", label: "Apply Now" },
+                { href: "/portfolio", label: "Portfolio" },
+                { href: "/faq", label: "FAQ" },
+              ].map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-muted-foreground hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Resources */}
+          <div>
+            <h4 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
+              Resources
+            </h4>
+            <ul className="space-y-2">
+              {[
+                { href: "#", label: "SEC Filing (S-1)" },
+                { href: "#", label: "Prospectus" },
+                { href: "#", label: "Risk Factors" },
+                { href: "#", label: "Terms of Service" },
+              ].map((link) => (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-muted-foreground hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
+              Connect
+            </h4>
+            <div className="flex gap-4 mb-4">
+              {[Twitter, Github, Linkedin].map((Icon, i) => (
+                <a
+                  key={i}
+                  href="#"
+                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <Icon className="h-5 w-5" />
+                </a>
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              support@spacex-ipo.com
+            </p>
+          </div>
+        </div>
+
+        <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-xs text-muted-foreground">
+            © 2026 Space Exploration Technologies Corp. All rights reserved.
+            NASDAQ: SPX
+          </p>
+          <div className="flex gap-6">
+            <Link
+              href="#"
+              className="text-xs text-muted-foreground hover:text-white"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="#"
+              className="text-xs text-muted-foreground hover:text-white"
+            >
+              Terms of Use
+            </Link>
+            <Link
+              href="#"
+              className="text-xs text-muted-foreground hover:text-white"
+            >
+              Disclosures
+            </Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+import { HeroSection } from "@/components/hero-section";
+import { IPOTimeline } from "@/components/ipo-timeline";
+import { MarketData } from "@/components/market-data";
+import { AllocationCalculator } from "@/components/allocation-calculator";
+import { motion } from "framer-motion";
+import { Rocket, Globe, Zap, Shield } from "lucide-react";
+
+const features = [
+  {
+    icon: Rocket,
+    title: "Direct Access",
+    description:
+      "Apply directly for the SpaceX IPO through our integrated platform with major brokerages.",
+  },
+  {
+    icon: Globe,
+    title: "Global Reach",
+    description:
+      "Available to retail investors across multiple countries and regions.",
+  },
+  {
+    icon: Zap,
+    title: "Real-time Updates",
+    description:
+      "Track your application status and get instant notifications on allocation.",
+  },
+  {
+    icon: Shield,
+    title: "Secure & Compliant",
+    description:
+      "Bank-grade encryption and full SEC compliance for your peace of mind.",
+  },
+];
+
+export default function HomePage() {
+  return (
+    <div>
+      <HeroSection />
+
+      {/* Features Section */}
+      <section className="py-24 relative">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Why Apply Through Us?
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              The most streamlined way to participate in the largest IPO in history
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((feature, i) => (
+              <div
+                key={feature.title}
+                className="glass-panel p-6 hover:border-spacex-blue/30 transition-colors group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-spacex-blue/10 flex items-center justify-center mb-4 group-hover:bg-spacex-blue/20 transition-colors">
+                  <feature.icon className="h-6 w-6 text-spacex-blue" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <IPOTimeline />
+      <MarketData />
+      <AllocationCalculator />
+
+      {/* CTA Section */}
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-spacex-blue/20 to-cyan-500/20" />
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-5" />
+        
+        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl sm:text-5xl font-bold text-white mb-6">
+            Ready to Invest in the Future?
+          </h2>
+          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Don't miss your chance to own a piece of SpaceX. Applications close on
+            June 10, 2026. Secure your allocation today.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="/apply"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-spacex-blue text-white font-semibold hover:bg-spacex-blue/90 transition-colors animate-pulse-glow"
+            >
+              <Rocket className="h-5 w-5" />
+              Apply for IPO Now
+            </a>
+            <a
+              href="/faq"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-lg border border-white/20 text-white font-semibold hover:bg-white/5 transition-colors"
+            >
+              Learn More
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+
+"use client";
+
+import { motion } from "framer-motion";
+import {
+  TrendingUp,
+  Users,
+  DollarSign,
+  Activity,
+  ArrowUpRight,
+  ArrowDownRight,
+  Clock,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { ipoData, formatNumber } from "@/lib/data";
+
+const stats = [
+  {
+    title: "Total Applications",
+    value: "2.4M",
+    change: "+12.5%",
+    trend: "up",
+    icon: Users,
+  },
+  {
+    title: "Total Demand",
+    value: "$84B",
+    change: "+8.2%",
+    trend: "up",
+    icon: DollarSign,
+  },
+  {
+    title: "Oversubscription",
+    value: "7.0x",
+    change: "+1.2x",
+    trend: "up",
+    icon: Activity,
+  },
+  {
+    title: "Avg. Application",
+    value: "$3,500",
+    change: "-2.1%",
+    trend: "down",
+    icon: TrendingUp,
+  },
+];
+
+const recentActivity = [
+  {
+    user: "Investor #28492",
+    action: "Applied for $10,000",
+    time: "2 min ago",
+    status: "confirmed",
+  },
+  {
+    user: "Investor #19284",
+    action: "Applied for $5,000",
+    time: "5 min ago",
+    status: "confirmed",
+  },
+  {
+    user: "Investor #48291",
+    action: "Modified to $25,000",
+    time: "12 min ago",
+    status: "pending",
+  },
+  {
+    user: "Investor #10293",
+    action: "Cancelled application",
+    time: "18 min ago",
+    status: "cancelled",
+  },
+  {
+    user: "Investor #39482",
+    action: "Applied for $50,000",
+    time: "25 min ago",
+    status: "confirmed",
+  },
+];
+
+export default function DashboardPage() {
+  return (
+    <div className="pt-24 pb-12 min-h-screen">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+            IPO Dashboard
+          </h1>
+          <p className="text-muted-foreground">
+            Real-time overview of the SpaceX IPO application process
+          </p>
+        </motion.div>
+
+        {/* Stats Grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {stats.map((stat, i) => (
+            <motion.div
+              key={stat.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+            >
+              <Card className="bg-spacex-dark border-white/10">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </CardTitle>
+                  <stat.icon className="h-4 w-4 text-spacex-blue" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {stat.value}
+                  </div>
+                  <div
+                    className={`flex items-center text-xs ${
+                      stat.trend === "up" ? "text-green-400" : "text-red-400"
+                    }`}
+                  >
+                    {stat.trend === "up" ? (
+                      <ArrowUpRight className="h-3 w-3 mr-1" />
+                    ) : (
+                      <ArrowDownRight className="h-3 w-3 mr-1" />
+                    )}
+                    {stat.change} from yesterday
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* IPO Progress */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="lg:col-span-2"
+          >
+            <Card className="bg-spacex-dark border-white/10">
+              <CardHeader>
+                <CardTitle className="text-white">IPO Progress</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">
+                      Applications Received
+                    </span>
+                    <span className="text-sm font-bold text-white">
+                      2.4M / 3.0M Target
+                    </span>
+                  </div>
+                  <Progress value={80} className="h-3" />
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">
+                      Total Demand vs. Offering
+                    </span>
+                    <span className="text-sm font-bold text-white">
+                      $84B / $12B (7.0x oversubscribed)
+                    </span>
+                  </div>
+                  <Progress value={100} className="h-3" />
+                  <div className="mt-1 h-1 bg-gradient-to-r from-spacex-blue to-red-500 rounded-full" style={{ width: "700%" }} />
+                </div>
+
+                <div className="grid sm:grid-cols-3 gap-4 pt-4">
+                  <div className="p-4 rounded-lg bg-white/5">
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Price Range
+                    </div>
+                    <div className="text-lg font-bold text-white">
+                      ${ipoData.expectedPriceRange[0]} - $
+                      {ipoData.expectedPriceRange[1]}
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-lg bg-white/5">
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Shares Offered
+                    </div>
+                    <div className="text-lg font-bold text-white">
+                      {formatNumber(ipoData.sharesOffered)}
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-lg bg-white/5">
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Expected Valuation
+                    </div>
+                    <div className="text-lg font-bold text-white">
+                      ${formatNumber(ipoData.marketCap)}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Recent Activity */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <Card className="bg-spacex-dark border-white/10 h-full">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-spacex-blue" />
+                  Live Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentActivity.map((activity, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full mt-2 shrink-0 ${
+                          activity.status === "confirmed"
+                            ? "bg-green-400"
+                            : activity.status === "pending"
+                            ? "bg-yellow-400"
+                            : "bg-red-400"
+                        }`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white font-medium truncate">
+                          {activity.user}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {activity.action}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                        <Clock className="h-3 w-3" />
+                        {activity.time}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Countdown */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="mt-8"
+        >
+          <Card className="bg-gradient-to-r from-spacex-blue/20 to-cyan-500/20 border-spacex-blue/30">
+            <CardContent className="p-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    Application Deadline Approaching
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Don't miss your chance to participate in the SpaceX IPO.
+                    Applications close in 2 days.
+                  </p>
+                </div>
+                <div className="flex gap-4">
+                  {[
+                    { value: "02", label: "Days" },
+                    { value: "14", label: "Hours" },
+                    { value: "32", label: "Minutes" },
+                    { value: "18", label: "Seconds" },
+                  ].map((unit) => (
+                    <div
+                      key={unit.label}
+                      className="text-center p-3 rounded-lg bg-black/30"
+                    >
+                      <div className="text-2xl font-bold text-white">
+                        {unit.value}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {unit.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+"use client";
+
+import { motion } from "framer-motion";
+import { FileText, AlertTriangle } from "lucide-react";
+import { ApplicationForm } from "@/components/application-form";
+
+export default function ApplyPage() {
+  return (
+    <div className="pt-24 pb-12 min-h-screen">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-spacex-blue/10 border border-spacex-blue/30 text-spacex-blue text-sm font-medium mb-6">
+            <FileText className="h-4 w-4" />
+            IPO Application
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Apply for SpaceX IPO
+          </h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Complete your application in just a few steps. Make sure you have your
+            brokerage account information ready.
+          </p>
+        </motion.div>
+
+        {/* Warning Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="max-w-2xl mx-auto mb-8"
+        >
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+            <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+            <div className="text-sm text-muted-foreground">
+              <p className="text-yellow-400 font-medium mb-1">
+                Important Notice
+              </p>
+              <p>
+                This is a high-risk investment. SpaceX IPO shares may be volatile
+                and you could lose your entire investment. Please read the
+                prospectus carefully before applying. Applications close on June
+                10, 2026 at 11:59 PM ET.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Form */}
+        <ApplicationForm />
+      </div>
+    </div>
+  );
+}
+
+
+"use client";
+
+import { motion } from "framer-motion";
+import { PieChart, TrendingUp, Package, Clock, AlertCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { mockApplications, formatCurrency } from "@/lib/data";
+
+export default function PortfolioPage() {
+  const totalInvested = mockApplications.reduce(
+    (sum, app) => sum + app.amount,
+    0
+  );
+  const totalAllocated = mockApplications.reduce(
+    (sum, app) => sum + (app.allocatedShares || 0) * 100,
+    0
+  );
+
+  return (
+    <div className="pt-24 pb-12 min-h-screen">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+            My Portfolio
+          </h1>
+          <p className="text-muted-foreground">
+            Track your SpaceX IPO applications and allocations
+          </p>
+        </motion.div>
+
+        {/* Summary Cards */}
+        <div className="grid sm:grid-cols-3 gap-4 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="bg-spacex-dark border-white/10">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Invested
+                </CardTitle>
+                <Package className="h-4 w-4 text-spacex-blue" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">
+                  {formatCurrency(totalInvested)}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Across {mockApplications.length} applications
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="bg-spacex-dark border-white/10">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Allocated Value
+                </CardTitle>
+                <PieChart className="h-4 w-4 text-green-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-400">
+                  {formatCurrency(totalAllocated)}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {mockApplications.filter((a) => a.status === "allocated").length}{" "}
+                  allocations confirmed
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="bg-spacex-dark border-white/10">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Shares
+                </CardTitle>
+                <TrendingUp className="h-4 w-4 text-spacex-blue" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">
+                  {mockApplications.reduce(
+                    (sum, app) => sum + (app.allocatedShares || 0),
+                    0
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  SPX shares allocated
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Applications Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card className="bg-spacex-dark border-white/10">
+            <CardHeader>
+              <CardTitle className="text-white">My Applications</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Reference ID
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Amount
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Status
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Allocated Shares
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Submitted
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mockApplications.map((app) => (
+                      <tr
+                        key={app.id}
+                        className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                      >
+                        <td className="py-4 px-4 text-sm font-mono text-white">
+                          {app.id}
+                        </td>
+                        <td className="py-4 px-4 text-sm text-white font-medium">
+                          {formatCurrency(app.amount)}
+                        </td>
+                        <td className="py-4 px-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                              app.status === "confirmed"
+                                ? "bg-green-500/10 text-green-400"
+                                : app.status === "pending"
+                                ? "bg-yellow-500/10 text-yellow-400"
+                                : app.status === "allocated"
+                                ? "bg-spacex-blue/10 text-spacex-blue"
+                                : "bg-red-500/10 text-red-400"
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                app.status === "confirmed"
+                                  ? "bg-green-400"
+                                  : app.status === "pending"
+                                  ? "bg-yellow-400"
+                                  : app.status === "allocated"
+                                  ? "bg-spacex-blue"
+                                  : "bg-red-400"
+                              }`}
+                            />
+                            {app.status.charAt(0).toUpperCase() +
+                              app.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 text-sm text-white">
+                          {app.allocatedShares || (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4 text-sm text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(app.submittedAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {mockApplications.length === 0 && (
+                <div className="text-center py-12">
+                  <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    No applications found.{" "}
+                    <a href="/apply" className="text-spacex-blue hover:underline">
+                      Apply now
+                    </a>
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+
+"use client";
+
+import { motion } from "framer-motion";
+import { HelpCircle, MessageCircle } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { faqData } from "@/lib/data";
+import { Button } from "@/components/ui/button";
+
+export default function FAQPage() {
+  return (
+    <div className="pt-24 pb-12 min-h-screen">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-spacex-blue/10 border border-spacex-blue/30 text-spacex-blue text-sm font-medium mb-6">
+            <HelpCircle className="h-4 w-4" />
+            FAQ
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Frequently Asked Questions
+          </h1>
+          <p className="text-muted-foreground">
+            Everything you need to know about the SpaceX IPO
+          </p>
+        </motion.div>
+
+        {/* FAQ Accordion */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Accordion type="single" collapsible className="space-y-4">
+            {faqData.map((faq, i) => (
+              <AccordionItem
+                key={i}
+                value={`item-${i}`}
+                className="glass-panel border-0 px-6 data-[state=open]:border-spacex-blue/30"
+              >
+                <AccordionTrigger className="text-left text-white hover:no-underline py-4">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-4">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </motion.div>
+
+        {/* Contact CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-12 text-center"
+        >
+          <div className="glass-panel p-8">
+            <MessageCircle className="h-10 w-10 text-spacex-blue mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">
+              Still have questions?
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Our support team is available 24/7 to help you with your IPO
+              application.
+            </p>
+            <Button variant="spacex">Contact Support</Button>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { amount, brokerage, accountNumber } = body;
+
+    // Validation
+    if (!amount || amount < 100) {
+      return NextResponse.json(
+        { error: "Minimum investment amount is $100" },
+        { status: 400 }
+      );
+    }
+
+    if (!brokerage) {
+      return NextResponse.json(
+        { error: "Brokerage selection is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!accountNumber || accountNumber.length < 4) {
+      return NextResponse.json(
+        { error: "Valid account number is required" },
+        { status: 400 }
+      );
+    }
+
+    // Simulate processing
+    const applicationId = `SPX-2026-${Math.floor(Math.random() * 90000) + 10000}`;
+    const timestamp = new Date().toISOString();
+
+    // In production, this would save to a database
+    const application = {
+      id: applicationId,
+      amount,
+      brokerage,
+      accountNumber: `****${accountNumber.slice(-4)}`,
+      status: "pending",
+      submittedAt: timestamp,
+    };
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Application submitted successfully",
+        data: application,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+import { NextRequest, NextResponse } from "next/server";
+import { ipoData } from "@/lib/data";
+
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const applicationId = searchParams.get("id");
+
+  if (!applicationId) {
+    return NextResponse.json(
+      { error: "Application ID is required" },
+      { status: 400 }
+    );
+  }
+
+  // Simulate status check
+  const statuses = ["pending", "confirmed", "allocated", "rejected"];
+  const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+
+  return NextResponse.json({
+    applicationId,
+    status: randomStatus,
+    ipoStatus: ipoData.status,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+    ],
+  },
+};
+
+module.exports = nextConfig;
+
+
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+
+
+# SpaceX IPO App Environment Variables
+NEXT_PUBLIC_APP_NAME="SpaceX IPO"
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+
+

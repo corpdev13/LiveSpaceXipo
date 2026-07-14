@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "SPCX — SpaceX IPO Platform"
+version = "1.0.0"
+id = "artifacts/spcx"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18613
+
+[services.development]
+run = "pnpm --filter @workspace/spcx run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/spcx", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/spcx/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18613"
+BASE_PATH = "/"

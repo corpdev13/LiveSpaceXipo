@@ -1,0 +1,47 @@
+Build a sleek, premium, dark-themed single-page web application called "SPCX" for the SpaceX IPO trading and information platform.
+
+**Design & Branding**
+- Futuristic SpaceX aesthetic: deep black / near-black background (#0a0a0a or #000000), crisp white text, subtle electric blue accents (#00A0E9), glassmorphism cards with subtle borders, modern sans-serif typography (Inter or Space Grotesk).
+- Fully responsive with smooth interactions and professional institutional feel.
+- Hero section with a clickable animated rocket (CSS + SVG or lightweight JS animation) and strong headline about the SpaceX IPO being live.
+- Prominent live-updating SPCX stock ticker bar showing current price, percentage change, and volume with realistic fluctuations every few seconds.
+- Market Updates section with beautiful dynamic news cards (positive SpaceX/Starship/Starlink/earnings updates).
+
+**Core Features (Anonymous-First)**
+- Anonymous accounts: Sign-up form only requires username + email (for notifications). No real personal data stored.
+- Login modal with demo credentials.
+- User Dashboard: Shows available cash balance, SPCX share holdings + live portfolio value, quick action buttons, and recent transaction history.
+- Deposit page: Clean form to add funds with payment method options (Bank Transfer, Crypto/USDC, Wire). On submit → instantly credit balance + show professional toast notifications simulating email + SMS confirmation.
+- Withdrawal page: Form to request withdrawal. Small amounts process instantly; larger amounts go to "pending" status.
+- All user actions update state in real-time and persist across refreshes (use localStorage for demo).
+
+**Admin / Mission Control Panel**
+- Accessible ONLY via URL parameter: `?admin=spcx2026` (with an optional simple password prompt for extra security — default passcode `spcx2026`).
+- Admin features:
+  - Overview stats (total users, total balances, pending withdrawals).
+  - Manage users table (view + delete).
+  - Live SPCX price control (update price and it reflects everywhere instantly).
+  - Publish new Market Update cards that appear immediately for all users.
+  - Full transactions table with Approve/Reject buttons for pending withdrawals (approving automatically updates the user's balance).
+- Show a clear "ADMIN MODE" banner when active.
+
+**Backend & Data Layer (Mock + Production-Ready)**
+- **Demo / Mock Backend**: Use browser localStorage (or a simple in-memory JS store) for users, transactions, and market news. All CRUD operations must work instantly.
+- **Production Backend (Supabase)**: Provide full integration instructions and schema:
+  - Tables needed:
+    - `users` (id, username, email, balance, portfolio jsonb, created_at)
+    - `transactions` (id, user_id, type, amount, status, timestamp, metadata jsonb)
+    - `market_news` (id, title, summary, category, time, impact)
+  - Include the exact SQL to create the tables.
+  - Use Supabase JS client for auth (anonymous + email), real-time subscriptions, and CRUD.
+  - For real-time notifications: Add notes on Supabase Edge Functions + Resend (email) and Twilio (SMS) so deposits, withdrawals, and admin approvals trigger actual emails and text messages.
+- Make the frontend code easy to swap from localStorage mock to real Supabase (clear comments in code).
+
+**Technical Requirements**
+- Single HTML file or clean component-based structure (Tailwind via CDN or proper setup).
+- Smooth SPA-style navigation between views (Home, Market Updates, Dashboard, Deposit, Withdraw, Admin) without full page reloads.
+- Beautiful toast notifications for every important action (success, error, info) including simulated "📧 Email sent via Google" and "📱 SMS delivered".
+- Professional copy focused on SpaceX IPO, reusability, Starship, Starlink growth, and secure anonymous trading.
+- High-quality interactions: hover states, loading states where appropriate, mobile-friendly menu.
+
+Make the entire experience feel premium, trustworthy, and ready for real users. Prioritize clean code, performance, and realism in all financial actions and admin controls.
