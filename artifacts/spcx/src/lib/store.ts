@@ -4,6 +4,7 @@ export interface User {
   email: string;
   balance: number;
   shares: number;
+  status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
 }
 
@@ -12,6 +13,7 @@ export interface Transaction {
   userId: string;
   type: 'deposit' | 'withdrawal' | 'buy' | 'sell';
   amount: number;
+  method?: string;
   status: 'completed' | 'pending' | 'rejected';
   timestamp: string;
   note?: string;
@@ -26,7 +28,18 @@ export interface MarketNews {
   time: string;
 }
 
+export interface SiteConfig {
+  cryptoWalletAddress: string;
+  cryptoNetwork: string;
+  bankName: string;
+  bankRouting: string;
+  bankAccount: string;
+  wireSwift: string;
+  supportEmail: string;
+}
+
 export interface AppState {
+  version: number;
   users: User[];
   currentUserId: string | null;
   transactions: Transaction[];
@@ -34,21 +47,25 @@ export interface AppState {
   spcxPrice: number;
   spcxPriceHistory: number[];
   sessionOpen: number;
+  siteConfig: SiteConfig;
 }
 
+const STATE_VERSION = 3; // bump to force reset of old localStorage
 const STORAGE_KEY = 'spcx_app_state';
 
+const defaultSiteConfig: SiteConfig = {
+  cryptoWalletAddress: '0x742d35Cc6634C0532925a3b8D4C9dE8b6c1F3e2',
+  cryptoNetwork: 'Ethereum (ERC-20) — USDC',
+  bankName: 'SPCX Financial Corp',
+  bankRouting: '021000021',
+  bankAccount: 'SPCX-2026-IPO',
+  wireSwift: 'SPCXUS33XXX',
+  supportEmail: 'support@spcxipo.com',
+};
+
 const initialState: AppState = {
-  users: [
-    {
-      id: 'demo-user',
-      username: 'demo',
-      email: 'demo@spcx.io',
-      balance: 50000,
-      shares: 125,
-      createdAt: new Date().toISOString(),
-    },
-  ],
+  version: STATE_VERSION,
+  users: [],
   currentUserId: null,
   transactions: [],
   news: [
@@ -80,25 +97,36 @@ const initialState: AppState = {
   spcxPrice: 142.50,
   spcxPriceHistory: Array(20).fill(142.50),
   sessionOpen: 142.50,
+  siteConfig: defaultSiteConfig,
 };
 
 function loadState(): AppState {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored) as AppState;
+      // Force reset if version is old
+      if (!parsed.version || parsed.version < STATE_VERSION) {
+        localStorage.removeItem(STORAGE_KEY);
+        return { ...initialState };
+      }
+      // Merge siteConfig in case new fields were added
+      return {
+        ...parsed,
+        siteConfig: { ...defaultSiteConfig, ...(parsed.siteConfig || {}) },
+      };
     }
   } catch (e) {
-    console.error('Failed to load state:', e);
+    // ignore
   }
-  return initialState;
+  return { ...initialState };
 }
 
-function saveState(state: AppState): void {
+function saveState(s: AppState): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
   } catch (e) {
-    console.error('Failed to save state:', e);
+    // ignore
   }
 }
 
@@ -118,125 +146,136 @@ export function getCurrentUser(): User | null {
   return state.users.find((u) => u.id === state.currentUserId) || null;
 }
 
+// Login: requires approved status
 export function login(username: string, email: string): User {
-  const existingUser = state.users.find(
-    (u) => u.username === username || u.email === email
+  const user = state.users.find(
+    (u) => u.username.toLowerCase() === username.toLowerCase() && u.email.toLowerCase() === email.toLowerCase()
   );
-  
-  if (existingUser) {
-    setState({ currentUserId: existingUser.id });
-    return existingUser;
-  }
-  
-  const newUser: User = {
-    id: `user-${Date.now()}`,
-    username,
-    email,
-    balance: 10000,
-    shares: 0,
-    createdAt: new Date().toISOString(),
-  };
-  
-  setState({
-    users: [...state.users, newUser],
-    currentUserId: newUser.id,
-  });
-  
-  return newUser;
+
+  if (!user) throw new Error('No account found with these credentials. Please register or check your details.');
+  if (user.status === 'pending') throw new Error('PENDING_APPROVAL');
+  if (user.status === 'rejected') throw new Error('ACCOUNT_REJECTED');
+
+  setState({ currentUserId: user.id });
+  return user;
 }
 
 export function logout(): void {
   setState({ currentUserId: null });
 }
 
+// Register: creates user with pending status, $0 balance
 export function register(username: string, email: string): User {
+  const existing = state.users.find(
+    (u) => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === email.toLowerCase()
+  );
+  if (existing) throw new Error('Username or email already registered.');
+
   const newUser: User = {
     id: `user-${Date.now()}`,
     username,
     email,
-    balance: 10000,
+    balance: 0,
     shares: 0,
+    status: 'pending',
     createdAt: new Date().toISOString(),
   };
-  
-  setState({
-    users: [...state.users, newUser],
-    currentUserId: newUser.id,
-  });
-  
+
+  setState({ users: [...state.users, newUser] });
   return newUser;
 }
 
-export function deposit(amount: number, method: string): Transaction {
+// Admin: approve a user
+export function approveUser(userId: string): void {
+  setState({
+    users: state.users.map((u) =>
+      u.id === userId ? { ...u, status: 'approved' as const } : u
+    ),
+  });
+}
+
+// Admin: reject a user
+export function rejectUser(userId: string): void {
+  setState({
+    users: state.users.map((u) =>
+      u.id === userId ? { ...u, status: 'rejected' as const } : u
+    ),
+  });
+}
+
+// Admin: manually credit a user (e.g. after reviewing crypto deposit)
+export function creditUser(userId: string, amount: number, txId?: string): void {
+  setState({
+    users: state.users.map((u) =>
+      u.id === userId ? { ...u, balance: u.balance + amount } : u
+    ),
+    transactions: txId
+      ? state.transactions.map((t) =>
+          t.id === txId ? { ...t, status: 'completed' as const } : t
+        )
+      : state.transactions,
+  });
+}
+
+// Card deposits always fail — returns error string
+export function depositCard(_amount: number): never {
+  throw new Error('CARD_DECLINED');
+}
+
+// Crypto deposit: creates pending transaction, does NOT credit balance
+export function depositCrypto(amount: number, txHash?: string): Transaction {
   const user = getCurrentUser();
   if (!user) throw new Error('Not logged in');
-  
+
   const transaction: Transaction = {
     id: `tx-${Date.now()}`,
     userId: user.id,
     type: 'deposit',
     amount,
-    status: 'completed',
+    method: 'crypto',
+    status: 'pending',
     timestamp: new Date().toISOString(),
-    note: `Deposit via ${method}`,
+    note: `Crypto deposit (USDC)${txHash ? ` — TxHash: ${txHash}` : ''}. Awaiting admin confirmation.`,
   };
-  
-  const updatedUsers = state.users.map((u) =>
-    u.id === user.id ? { ...u, balance: u.balance + amount } : u
-  );
-  
-  setState({
-    users: updatedUsers,
-    transactions: [transaction, ...state.transactions],
-  });
-  
+
+  setState({ transactions: [transaction, ...state.transactions] });
   return transaction;
 }
 
 export function withdraw(amount: number, method: string, destination: string): Transaction {
   const user = getCurrentUser();
   if (!user) throw new Error('Not logged in');
-  
-  if (amount > user.balance) {
-    throw new Error('Insufficient balance');
-  }
-  
+  if (amount > user.balance) throw new Error('Insufficient balance');
+
   const isLarge = amount >= 10000;
-  
+
   const transaction: Transaction = {
     id: `tx-${Date.now()}`,
     userId: user.id,
     type: 'withdrawal',
     amount,
+    method,
     status: isLarge ? 'pending' : 'completed',
     timestamp: new Date().toISOString(),
     note: `Withdrawal to ${method}: ${destination}`,
   };
-  
+
   const updatedUsers = isLarge
     ? state.users
     : state.users.map((u) =>
         u.id === user.id ? { ...u, balance: u.balance - amount } : u
       );
-  
-  setState({
-    users: updatedUsers,
-    transactions: [transaction, ...state.transactions],
-  });
-  
+
+  setState({ users: updatedUsers, transactions: [transaction, ...state.transactions] });
   return transaction;
 }
 
 export function buyShares(shares: number): Transaction {
   const user = getCurrentUser();
   if (!user) throw new Error('Not logged in');
-  
   const cost = shares * state.spcxPrice;
-  
-  if (cost > user.balance) {
-    throw new Error('Insufficient balance');
-  }
-  
+  if (cost > user.balance) throw new Error('Insufficient balance');
+
   const transaction: Transaction = {
     id: `tx-${Date.now()}`,
     userId: user.id,
@@ -244,33 +283,22 @@ export function buyShares(shares: number): Transaction {
     amount: cost,
     status: 'completed',
     timestamp: new Date().toISOString(),
-    note: `Bought ${shares} SPCX shares at $${state.spcxPrice.toFixed(2)}`,
+    note: `Bought ${shares} SPCX @ $${state.spcxPrice.toFixed(2)}`,
   };
-  
+
   const updatedUsers = state.users.map((u) =>
-    u.id === user.id
-      ? { ...u, balance: u.balance - cost, shares: u.shares + shares }
-      : u
+    u.id === user.id ? { ...u, balance: u.balance - cost, shares: u.shares + shares } : u
   );
-  
-  setState({
-    users: updatedUsers,
-    transactions: [transaction, ...state.transactions],
-  });
-  
+  setState({ users: updatedUsers, transactions: [transaction, ...state.transactions] });
   return transaction;
 }
 
 export function sellShares(shares: number): Transaction {
   const user = getCurrentUser();
   if (!user) throw new Error('Not logged in');
-  
-  if (shares > user.shares) {
-    throw new Error('Insufficient shares');
-  }
-  
+  if (shares > user.shares) throw new Error('Insufficient shares');
+
   const proceeds = shares * state.spcxPrice;
-  
   const transaction: Transaction = {
     id: `tx-${Date.now()}`,
     userId: user.id,
@@ -278,84 +306,77 @@ export function sellShares(shares: number): Transaction {
     amount: proceeds,
     status: 'completed',
     timestamp: new Date().toISOString(),
-    note: `Sold ${shares} SPCX shares at $${state.spcxPrice.toFixed(2)}`,
+    note: `Sold ${shares} SPCX @ $${state.spcxPrice.toFixed(2)}`,
   };
-  
+
   const updatedUsers = state.users.map((u) =>
-    u.id === user.id
-      ? { ...u, balance: u.balance + proceeds, shares: u.shares - shares }
-      : u
+    u.id === user.id ? { ...u, balance: u.balance + proceeds, shares: u.shares - shares } : u
   );
-  
-  setState({
-    users: updatedUsers,
-    transactions: [transaction, ...state.transactions],
-  });
-  
+  setState({ users: updatedUsers, transactions: [transaction, ...state.transactions] });
   return transaction;
 }
 
 export function approveWithdrawal(txId: string): void {
   const tx = state.transactions.find((t) => t.id === txId);
   if (!tx || tx.type !== 'withdrawal') return;
-  
+
   const updatedTransactions = state.transactions.map((t) =>
     t.id === txId ? { ...t, status: 'completed' as const } : t
   );
-  
   const updatedUsers = state.users.map((u) =>
     u.id === tx.userId ? { ...u, balance: u.balance - tx.amount } : u
   );
-  
-  setState({
-    transactions: updatedTransactions,
-    users: updatedUsers,
-  });
+  setState({ transactions: updatedTransactions, users: updatedUsers });
 }
 
 export function rejectWithdrawal(txId: string): void {
-  const updatedTransactions = state.transactions.map((t) =>
-    t.id === txId ? { ...t, status: 'rejected' as const } : t
-  );
-  
-  setState({ transactions: updatedTransactions });
+  setState({
+    transactions: state.transactions.map((t) =>
+      t.id === txId ? { ...t, status: 'rejected' as const } : t
+    ),
+  });
+}
+
+export function rejectDeposit(txId: string): void {
+  setState({
+    transactions: state.transactions.map((t) =>
+      t.id === txId ? { ...t, status: 'rejected' as const } : t
+    ),
+  });
 }
 
 export function updatePrice(price: number): void {
   const newHistory = [...state.spcxPriceHistory.slice(1), price];
-  setState({
-    spcxPrice: price,
-    spcxPriceHistory: newHistory,
-  });
+  setState({ spcxPrice: price, spcxPriceHistory: newHistory });
 }
 
 export function addNews(news: Omit<MarketNews, 'id' | 'time'>): void {
-  const newNews: MarketNews = {
-    ...news,
-    id: `news-${Date.now()}`,
-    time: 'Just now',
-  };
-  
-  setState({
-    news: [newNews, ...state.news],
-  });
+  const newNews: MarketNews = { ...news, id: `news-${Date.now()}`, time: 'Just now' };
+  setState({ news: [newNews, ...state.news] });
 }
 
 export function deleteUser(userId: string): void {
-  if (userId === 'demo-user') {
-    throw new Error('Cannot delete demo user');
-  }
-  
   setState({
     users: state.users.filter((u) => u.id !== userId),
     transactions: state.transactions.filter((t) => t.userId !== userId),
+    currentUserId: state.currentUserId === userId ? null : state.currentUserId,
   });
 }
 
+export function updateSiteConfig(config: Partial<SiteConfig>): void {
+  setState({ siteConfig: { ...state.siteConfig, ...config } });
+}
+
 export function getPendingWithdrawals(): Transaction[] {
-  return state.transactions.filter(
-    (t) => t.type === 'withdrawal' && t.status === 'pending'
-  );
+  return state.transactions.filter((t) => t.type === 'withdrawal' && t.status === 'pending');
+}
+
+export function getPendingDeposits(): Transaction[] {
+  return state.transactions.filter((t) => t.type === 'deposit' && t.status === 'pending');
+}
+
+export function getPendingUsers(): User[] {
+  return state.users.filter((u) => u.status === 'pending');
 }
 
 export function getAllTransactions(): Transaction[] {

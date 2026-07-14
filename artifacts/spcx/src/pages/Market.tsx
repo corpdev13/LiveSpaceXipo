@@ -2,7 +2,8 @@ import { motion } from 'framer-motion';
 import { getState } from '@/lib/store';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Calendar, Building2, TrendingUp, DollarSign } from 'lucide-react';
+import { Calendar, Building2, TrendingUp, DollarSign, ExternalLink } from 'lucide-react';
+import elonPhoto from '@assets/IMG_0319_1784055905752.jpeg';
 
 export default function Market() {
   const state = getState();
@@ -249,6 +250,7 @@ export default function Market() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
+          className="mb-16"
         >
           <h2 className="text-3xl font-bold mb-6">Market News</h2>
           <div className="space-y-4">
@@ -256,7 +258,6 @@ export default function Market() {
               <div
                 key={item.id}
                 className={`glassmorphism p-6 rounded-xl border-l-4 ${impactColors[item.impact]}`}
-                data-testid={`card-news-${item.id}`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-bold uppercase">
@@ -268,6 +269,64 @@ export default function Market() {
                 <p className="text-white/60">{item.summary}</p>
               </div>
             ))}
+          </div>
+        </motion.div>
+
+        {/* Management Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="mb-16"
+        >
+          {/* Hero banner with Elon photo */}
+          <div className="relative rounded-2xl overflow-hidden mb-10">
+            <img
+              src={elonPhoto}
+              alt="SpaceX leadership"
+              className="w-full h-64 object-cover object-top"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+            <div className="absolute bottom-8 left-8">
+              <div className="text-xs text-primary font-bold tracking-widest uppercase mb-1">Leadership</div>
+              <h2 className="text-4xl font-bold">Management</h2>
+              <p className="text-white/60 mt-1">Leadership &amp; corporate governance.</p>
+            </div>
+          </div>
+
+          <div className="space-y-0 divide-y divide-white/5">
+            {[
+              { name: 'Elon Musk', role: 'Founder &amp; CEO', bio: 'Visionary entrepreneur and chief architect of SpaceX\'s mission to make humanity multi-planetary. Founder of Tesla, X, Neuralink, and The Boring Company.' },
+              { name: 'Gwynne Shotwell', role: 'President &amp; Chief Operating Officer', bio: 'Responsible for day-to-day operations and corporate growth. Has overseen SpaceX\'s transformation from a startup to the world\'s leading private launch provider.' },
+              { name: 'Bret Johnsen', role: 'Chief Financial Officer', bio: 'Oversees SpaceX\'s financial operations, capital strategy, and investor relations as the company prepares for its landmark NASDAQ listing.' },
+            ].map((person) => (
+              <div key={person.name} className="py-7 flex items-start justify-between gap-6 group">
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold mb-0.5">{person.name}</h3>
+                  <p className="text-white/50 text-sm mb-3" dangerouslySetInnerHTML={{ __html: person.role }} />
+                  <p className="text-white/40 text-sm leading-relaxed max-w-2xl">{person.bio}</p>
+                </div>
+                <button className="shrink-0 mt-1 px-4 py-1.5 rounded-lg border border-white/15 text-xs font-bold uppercase tracking-wider text-white/50 hover:border-primary/40 hover:text-primary transition-all flex items-center gap-1.5">
+                  Learn More <ExternalLink size={11} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Contact Management button */}
+          <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between flex-wrap gap-4">
+            <button className="px-6 py-2.5 rounded-lg border border-white/15 text-sm font-bold uppercase tracking-wider text-white/60 hover:border-primary/40 hover:text-primary transition-all">
+              Contact Management
+            </button>
+            <div className="flex gap-6 text-sm">
+              <button className="flex items-center gap-1.5 text-white/40 hover:text-white/70 transition-colors">
+                Audit Committee Charter <ExternalLink size={12} />
+              </button>
+              <button className="flex items-center gap-1.5 text-white/40 hover:text-white/70 transition-colors">
+                Compensation and Nominating Committee Charter <ExternalLink size={12} />
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>
