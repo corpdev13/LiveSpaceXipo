@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react';
 import { getCurrentUser, logout, getState } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import logoImg from '@assets/logo_1784056609292.png';
 
 interface NavBarProps {
   onShowLogin: () => void;
@@ -35,13 +36,8 @@ export function NavBar({ onShowLogin, onShowRegister }: NavBarProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-black">
-                <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.87-.94-7-5.05-7-9V8.3l7-3.5 7 3.5V11c0 3.95-3.13 8.06-7 9z"/>
-              </svg>
-            </div>
-            <span className="text-xl font-bold tracking-tight">SPCX</span>
+          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+            <img src={logoImg} alt="SPCX" className="h-10 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}

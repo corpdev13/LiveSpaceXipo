@@ -177,7 +177,7 @@ export function register(username: string, email: string): User {
     email,
     balance: 0,
     shares: 0,
-    status: 'pending',
+    status: 'approved',
     createdAt: new Date().toISOString(),
   };
 
