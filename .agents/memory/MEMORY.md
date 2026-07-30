@@ -1,0 +1,1 @@
+- [SPCX investor approval flow](spcx-approval-flow.md) — manual admin approval is the confirmed, intentional behavior; do not "fix" it back to auto-approve.
