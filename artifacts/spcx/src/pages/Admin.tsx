@@ -1,609 +1,294 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Link } from 'wouter';
-import {
-  getState,
-  getAllTransactions,
-  getPendingWithdrawals,
-  getPendingDeposits,
-  getPendingUsers,
-  approveWithdrawal,
-  rejectWithdrawal,
-  rejectDeposit,
-  creditUser,
-  approveUser,
-  rejectUser,
-  deleteUser,
-  updatePrice,
-  addNews,
-  updateSiteConfig,
-} from '@/lib/store';
-import { formatCurrency } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  AlertTriangle, DollarSign, Users, TrendingUp, FileText,
-  Check, X, Trash2, UserCheck, Settings, Coins
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { Lock, Check, X, DollarSign, Wallet } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+type Investor = { id: number; fullName: string; email: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; shares: string; avgCost: string };
+type Deposit = { id: number; investorId: number; fullName: string; email: string; amount: string; method: 'card' | 'crypto'; coin: string | null; status: 'pending' | 'completed' | 'failed'; createdAt: string };
+type DepositAddress = { coin: string; address: string; updatedAt: string };
+
+const TABS = ['Investors', 'Deposits', 'Credit User', 'Deposit Addresses'] as const;
+type Tab = typeof TABS[number];
+
+async function adminFetch(path: string, password: string, options: RequestInit = {}) {
+  const res = await fetch(`/api${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-password': password,
+      ...(options.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Request failed (${res.status})`);
+  }
+  return res.json();
+}
 
 export default function Admin() {
-  const isAdmin =
-    new URLSearchParams(window.location.search).get('admin') === 'spcx2026' ||
-    sessionStorage.getItem('spcx_admin') === 'true';
+  const [password, setPassword] = useState('');
+  const [authed, setAuthed] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [tab, setTab] = useState<Tab>('Investors');
 
-  const [state, setState] = useState(getState());
-  const [newPrice, setNewPrice] = useState(state.spcxPrice.toString());
-  const [newsTitle, setNewsTitle] = useState('');
-  const [newsSummary, setNewsSummary] = useState('');
-  const [newsCategory, setNewsCategory] = useState<'earnings' | 'launch' | 'starlink' | 'starship' | 'corporate'>('earnings');
-  const [newsImpact, setNewsImpact] = useState<'positive' | 'neutral' | 'negative'>('positive');
-  const [txFilter, setTxFilter] = useState<'all' | 'pending' | 'completed' | 'rejected'>('all');
-  const [creditAmounts, setCreditAmounts] = useState<Record<string, string>>({});
-  const [siteConfig, setSiteConfig] = useState(state.siteConfig);
+  const [investors, setInvestors] = useState<Investor[]>([]);
+  const [deposits, setDeposits] = useState<Deposit[]>([]);
+  const [addresses, setAddresses] = useState<DepositAddress[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const [creditInvestorId, setCreditInvestorId] = useState('');
+  const [creditShares, setCreditShares] = useState('');
+  const [creditPrice, setCreditPrice] = useState('');
+  const [addressEdits, setAddressEdits] = useState<Record<string, string>>({});
+
+  const loadInvestors = async (pw: string) => {
+    const data = await adminFetch('/admin/investors', pw);
+    setInvestors(data);
+  };
+  const loadDeposits = async (pw: string) => {
+    const data = await adminFetch('/admin/deposits', pw);
+    setDeposits(data);
+  };
+  const loadAddresses = async (pw: string) => {
+    const data = await adminFetch('/admin/deposit-addresses', pw);
+    setAddresses(data);
+    const edits: Record<string, string> = {};
+    data.forEach((a: DepositAddress) => { edits[a.coin] = a.address; });
+    setAddressEdits(edits);
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setLoading(true);
+    try {
+      await adminFetch('/admin/investors', passwordInput);
+      setPassword(passwordInput);
+      setAuthed(true);
+    } catch (err: any) {
+      setAuthError('Invalid password.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (isAdmin) sessionStorage.setItem('spcx_admin', 'true');
-  }, [isAdmin]);
+    if (!authed) return;
+    setLoading(true);
+    const load = tab === 'Investors' || tab === 'Credit User' ? loadInvestors
+      : tab === 'Deposits' ? loadDeposits
+      : loadAddresses;
+    load(password).catch((err) => toast.error(err.message)).finally(() => setLoading(false));
+  }, [authed, tab]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const s = getState();
-      setState(s);
-      setSiteConfig(s.siteConfig);
-    }, 1500);
-    return () => clearInterval(interval);
-  }, []);
+  const handleStatusUpdate = async (id: number, status: 'approved' | 'rejected') => {
+    try {
+      await adminFetch(`/admin/investors/${id}/status`, password, { method: 'PATCH', body: JSON.stringify({ status }) });
+      toast.success(`Investor ${status}.`);
+      loadInvestors(password);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
 
-  if (!isAdmin) {
+  const handleDepositStatus = async (id: number, status: 'completed' | 'failed') => {
+    try {
+      await adminFetch(`/admin/deposits/${id}/status`, password, { method: 'PATCH', body: JSON.stringify({ status }) });
+      toast.success(`Deposit marked ${status}.`);
+      loadDeposits(password);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleCredit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!creditInvestorId || !creditShares || !creditPrice) {
+      toast.error('Fill in all fields.');
+      return;
+    }
+    try {
+      await adminFetch(`/admin/investors/${creditInvestorId}/credit`, password, {
+        method: 'POST',
+        body: JSON.stringify({ shares: parseFloat(creditShares), pricePerShare: parseFloat(creditPrice) }),
+      });
+      toast.success('Shares credited.');
+      setCreditShares('');
+      setCreditPrice('');
+      loadInvestors(password);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleAddressSave = async (coin: string) => {
+    try {
+      await adminFetch(`/admin/deposit-addresses/${coin}`, password, {
+        method: 'PUT',
+        body: JSON.stringify({ address: addressEdits[coin] }),
+      });
+      toast.success(`${coin} address updated.`);
+      loadAddresses(password);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  if (!authed) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <AlertTriangle size={64} className="mx-auto mb-4 text-destructive" />
-          <h1 className="text-4xl font-bold mb-4">Access Denied</h1>
-          <p className="text-white/60 mb-6">Admin credentials required</p>
-          <Link href="/"><Button className="bg-primary hover:bg-primary/90 text-black font-semibold">Return to Home</Button></Link>
-        </div>
+      <div className="min-h-[100dvh] bg-[#050a0f] text-white flex flex-col items-center justify-center px-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-sm">
+          <div className="flex flex-col items-center mb-10">
+            <Lock className="w-8 h-8 text-white/50 mb-4" />
+            <h1 className="text-2xl font-bold font-display uppercase tracking-widest">Admin Access</h1>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <input
+              type="password"
+              placeholder="ADMIN PASSWORD"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-5 py-4 focus:outline-none focus:border-white/80 transition-all font-display tracking-widest uppercase"
+              autoFocus
+            />
+            {authError && <p className="text-red-400 font-display tracking-wider text-sm">{authError}</p>}
+            <button type="submit" disabled={loading} className="w-full bg-white text-black font-display font-bold text-lg tracking-widest uppercase py-4 hover:bg-white/90 disabled:opacity-50 transition-colors cursor-pointer">
+              {loading ? 'Checking...' : 'Enter'}
+            </button>
+          </form>
+        </motion.div>
       </div>
     );
   }
 
-  const totalUsers = state.users.length;
-  const approvedUsers = state.users.filter(u => u.status === 'approved').length;
-  const totalBalance = state.users.reduce((sum, u) => sum + u.balance, 0);
-  const pendingWithdrawals = getPendingWithdrawals();
-  const pendingDeposits = getPendingDeposits();
-  const pendingUsers = getPendingUsers();
-  const pendingAmount = pendingWithdrawals.reduce((sum, tx) => sum + tx.amount, 0);
-
-  const refresh = () => setState(getState());
-
-  const handleUpdatePrice = () => {
-    const price = Number(newPrice);
-    if (!price || price <= 0) { toast.error('Invalid price'); return; }
-    updatePrice(price);
-    refresh();
-    toast.success(`Price updated to ${formatCurrency(price)}`);
-  };
-
-  const handleApproveWithdrawal = (txId: string) => {
-    approveWithdrawal(txId);
-    refresh();
-    toast.success('Withdrawal approved and processed');
-  };
-
-  const handleRejectWithdrawal = (txId: string) => {
-    rejectWithdrawal(txId);
-    refresh();
-    toast.info('Withdrawal rejected');
-  };
-
-  const handleCreditDeposit = (txId: string, userId: string) => {
-    const amt = Number(creditAmounts[txId]);
-    if (!amt || amt <= 0) { toast.error('Enter a credit amount'); return; }
-    creditUser(userId, amt, txId);
-    setCreditAmounts(prev => { const n = { ...prev }; delete n[txId]; return n; });
-    refresh();
-    toast.success(`Credited ${formatCurrency(amt)} to user`);
-  };
-
-  const handleRejectDeposit = (txId: string) => {
-    rejectDeposit(txId);
-    refresh();
-    toast.info('Deposit rejected');
-  };
-
-  const handleApproveUser = (userId: string, username: string) => {
-    approveUser(userId);
-    refresh();
-    toast.success(`${username} approved — account activated`);
-  };
-
-  const handleRejectUser = (userId: string, username: string) => {
-    rejectUser(userId);
-    refresh();
-    toast.info(`${username} rejected`);
-  };
-
-  const handleDeleteUser = (userId: string, username: string) => {
-    if (!confirm(`Delete user ${username}? This cannot be undone.`)) return;
-    try {
-      deleteUser(userId);
-      refresh();
-      toast.success(`User ${username} deleted`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Delete failed');
-    }
-  };
-
-  const handlePublishNews = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsTitle || !newsSummary) { toast.error('Fill in all fields'); return; }
-    addNews({ title: newsTitle, summary: newsSummary, category: newsCategory, impact: newsImpact });
-    refresh();
-    toast.success('News published');
-    setNewsTitle('');
-    setNewsSummary('');
-  };
-
-  const handleSaveConfig = () => {
-    updateSiteConfig(siteConfig);
-    refresh();
-    toast.success('Site configuration saved');
-  };
-
-  const allTx = getAllTransactions();
-  const filteredTx = txFilter === 'all' ? allTx : allTx.filter(t => t.status === txFilter);
-
-  const statusBadge = (status: string) => (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-      status === 'completed' ? 'bg-chart-2/20 text-chart-2' :
-      status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-      'bg-destructive/20 text-destructive'
-    }`}>{status}</span>
-  );
-
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Admin Banner */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 p-4 rounded-xl bg-destructive/10 border-2 border-destructive/60">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="text-destructive" size={22} />
-            <div className="flex-1">
-              <div className="font-bold text-lg tracking-wide">ADMIN MODE — MISSION CONTROL</div>
-              <div className="text-sm text-white/60">Full system access enabled — handle with care</div>
-            </div>
-            {pendingUsers.length > 0 && (
-              <div className="px-3 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-sm font-bold">
-                {pendingUsers.length} pending approval
-              </div>
-            )}
-          </div>
-        </motion.div>
+    <div className="min-h-[100dvh] bg-[#050a0f] text-white">
+      <header className="px-6 py-6 border-b border-white/10">
+        <h1 className="text-2xl font-bold font-display uppercase tracking-widest">SPCX Admin</h1>
+      </header>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-5xl font-bold mb-1">Admin Panel</h1>
-          <p className="text-white/50 text-lg">Platform management and oversight</p>
-        </motion.div>
-
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="flex flex-wrap gap-1 h-auto bg-card border border-white/10 p-1 rounded-xl">
-            <TabsTrigger value="overview" className="flex-1">Overview</TabsTrigger>
-            <TabsTrigger value="approvals" className="flex-1 relative">
-              Approvals
-              {pendingUsers.length > 0 && (
-                <span className="ml-2 w-5 h-5 rounded-full bg-destructive text-white text-xs flex items-center justify-center">{pendingUsers.length}</span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="deposits" className="flex-1 relative">
-              Deposits
-              {pendingDeposits.length > 0 && (
-                <span className="ml-2 w-5 h-5 rounded-full bg-yellow-500 text-black text-xs flex items-center justify-center">{pendingDeposits.length}</span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex-1">Users</TabsTrigger>
-            <TabsTrigger value="transactions" className="flex-1">Transactions</TabsTrigger>
-            <TabsTrigger value="news" className="flex-1">News</TabsTrigger>
-            <TabsTrigger value="settings" className="flex-1">Settings</TabsTrigger>
-          </TabsList>
-
-          {/* Overview */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { label: 'Total Users', value: totalUsers, sub: `${approvedUsers} approved`, icon: Users, color: 'text-primary' },
-                { label: 'Platform Balance', value: formatCurrency(totalBalance), icon: DollarSign, color: 'text-chart-2' },
-                { label: 'Pending Withdrawals', value: pendingWithdrawals.length, sub: formatCurrency(pendingAmount), icon: AlertTriangle, color: 'text-yellow-400' },
-                { label: 'SPCX Price', value: formatCurrency(state.spcxPrice), icon: TrendingUp, color: 'text-primary' },
-              ].map((card) => (
-                <div key={card.label} className="glassmorphism p-6 rounded-xl">
-                  <div className="flex items-center gap-2 mb-3">
-                    <card.icon className={card.color} size={18} />
-                    <span className="text-sm text-white/50">{card.label}</span>
-                  </div>
-                  <div className="text-3xl font-bold">{card.value}</div>
-                  {card.sub && <div className="text-xs text-white/40 mt-1">{card.sub}</div>}
-                </div>
-              ))}
-            </div>
-
-            <div className="glassmorphism p-8 rounded-xl">
-              <h2 className="text-2xl font-bold mb-4">Live Price Control</h2>
-              <div className="flex gap-4">
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={newPrice}
-                  onChange={(e) => setNewPrice(e.target.value)}
-                  className="bg-input border-white/10 text-2xl font-bold flex-1"
-                />
-                <Button onClick={handleUpdatePrice} className="bg-primary hover:bg-primary/90 text-black font-bold px-8">
-                  Update Price
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* User Approvals */}
-          <TabsContent value="approvals">
-            <div className="glassmorphism p-8 rounded-xl">
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                <UserCheck size={24} className="text-primary" />
-                Account Approvals
-              </h2>
-
-              {pendingUsers.length === 0 ? (
-                <div className="text-center py-16 text-white/40">
-                  <UserCheck size={48} className="mx-auto mb-3 opacity-30" />
-                  <p>No pending applications</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {pendingUsers.map((u) => (
-                    <div key={u.id} className="flex items-center justify-between p-4 rounded-xl bg-white/3 border border-white/8">
-                      <div>
-                        <div className="font-bold text-lg">{u.username}</div>
-                        <div className="text-sm text-white/50">{u.email}</div>
-                        <div className="text-xs text-white/30 mt-0.5">Applied {new Date(u.createdAt).toLocaleString()}</div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleApproveUser(u.id, u.username)} className="bg-chart-2 hover:bg-chart-2/90 text-black font-bold">
-                          <Check size={14} className="mr-1" /> Approve
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleRejectUser(u.id, u.username)} className="border-destructive/50 text-destructive hover:bg-destructive/10">
-                          <X size={14} className="mr-1" /> Reject
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Show all user statuses */}
-              <div className="mt-8">
-                <h3 className="text-lg font-bold mb-4 text-white/70">All Applications</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-white/10 text-white/50">
-                        <th className="text-left py-2 px-3">Username</th>
-                        <th className="text-left py-2 px-3">Email</th>
-                        <th className="text-center py-2 px-3">Status</th>
-                        <th className="text-right py-2 px-3">Registered</th>
-                        <th className="text-right py-2 px-3">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {state.users.map((u) => (
-                        <tr key={u.id} className="border-b border-white/5 hover:bg-white/3">
-                          <td className="py-2 px-3 font-semibold">{u.username}</td>
-                          <td className="py-2 px-3 text-white/50">{u.email}</td>
-                          <td className="py-2 px-3 text-center">{statusBadge(u.status)}</td>
-                          <td className="py-2 px-3 text-right text-white/40">{new Date(u.createdAt).toLocaleDateString()}</td>
-                          <td className="py-2 px-3 text-right">
-                            {u.status !== 'approved' && (
-                              <Button size="sm" onClick={() => handleApproveUser(u.id, u.username)} className="bg-chart-2/20 text-chart-2 hover:bg-chart-2/30 mr-1 text-xs h-7">
-                                Approve
-                              </Button>
-                            )}
-                            {u.status !== 'rejected' && u.status !== 'pending' && (
-                              <Button size="sm" variant="ghost" onClick={() => handleDeleteUser(u.id, u.username)} className="text-destructive hover:bg-destructive/10 h-7">
-                                <Trash2 size={14} />
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Deposit Review */}
-          <TabsContent value="deposits">
-            <div className="glassmorphism p-8 rounded-xl">
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                <Coins size={24} className="text-primary" />
-                Deposit Review
-              </h2>
-              <p className="text-white/50 text-sm mb-6">Review crypto deposits and manually credit user accounts upon verification.</p>
-
-              {pendingDeposits.length === 0 ? (
-                <div className="text-center py-16 text-white/40">
-                  <Coins size={48} className="mx-auto mb-3 opacity-30" />
-                  <p>No pending deposits</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {pendingDeposits.map((tx) => {
-                    const user = state.users.find(u => u.id === tx.userId);
-                    return (
-                      <div key={tx.id} className="p-5 rounded-xl bg-yellow-500/5 border border-yellow-500/20">
-                        <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-                          <div>
-                            <div className="font-bold text-xl text-yellow-400">{formatCurrency(tx.amount)} claimed</div>
-                            <div className="text-sm text-white/60 mt-0.5">{user?.username} ({user?.email})</div>
-                            <div className="text-xs text-white/40 mt-0.5">{new Date(tx.timestamp).toLocaleString()}</div>
-                          </div>
-                          <span className="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-bold">Pending Review</span>
-                        </div>
-                        {tx.note && <div className="text-xs text-white/40 mb-4 font-mono break-all">{tx.note}</div>}
-                        <div className="flex flex-wrap items-center gap-3">
-                          <div className="flex-1 min-w-36">
-                            <Label className="text-xs text-white/50 mb-1 block">Credit Amount (USD)</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder={tx.amount.toString()}
-                              value={creditAmounts[tx.id] || ''}
-                              onChange={(e) => setCreditAmounts(prev => ({ ...prev, [tx.id]: e.target.value }))}
-                              className="bg-input border-white/10 h-9 text-sm"
-                            />
-                          </div>
-                          <div className="flex gap-2 pt-4">
-                            <Button size="sm" onClick={() => handleCreditDeposit(tx.id, tx.userId)} className="bg-chart-2 hover:bg-chart-2/90 text-black font-bold">
-                              <Check size={14} className="mr-1" /> Credit & Approve
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => handleRejectDeposit(tx.id)} className="border-destructive/50 text-destructive hover:bg-destructive/10">
-                              <X size={14} className="mr-1" /> Reject
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Users */}
-          <TabsContent value="users">
-            <div className="glassmorphism p-8 rounded-xl">
-              <h2 className="text-2xl font-bold mb-6">User Management</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-white/10 text-white/50">
-                      <th className="text-left py-3 px-3">Username</th>
-                      <th className="text-left py-3 px-3">Email</th>
-                      <th className="text-center py-3 px-3">Status</th>
-                      <th className="text-right py-3 px-3">Balance</th>
-                      <th className="text-right py-3 px-3">Shares</th>
-                      <th className="text-right py-3 px-3">Portfolio</th>
-                      <th className="text-right py-3 px-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {state.users.map((user) => {
-                      const portfolioValue = user.balance + user.shares * state.spcxPrice;
-                      return (
-                        <tr key={user.id} className="border-b border-white/5 hover:bg-white/3">
-                          <td className="py-3 px-3 font-semibold">{user.username}</td>
-                          <td className="py-3 px-3 text-white/50">{user.email}</td>
-                          <td className="py-3 px-3 text-center">{statusBadge(user.status)}</td>
-                          <td className="py-3 px-3 text-right">{formatCurrency(user.balance)}</td>
-                          <td className="py-3 px-3 text-right">{user.shares}</td>
-                          <td className="py-3 px-3 text-right font-bold">{formatCurrency(portfolioValue)}</td>
-                          <td className="py-3 px-3 text-right">
-                            <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id, user.username)} className="text-destructive hover:bg-destructive/10">
-                              <Trash2 size={15} />
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Transactions */}
-          <TabsContent value="transactions">
-            <div className="glassmorphism p-8 rounded-xl">
-              <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-                <h2 className="text-2xl font-bold">Transaction Ledger</h2>
-                <div className="flex gap-2">
-                  {(['all', 'pending', 'completed', 'rejected'] as const).map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setTxFilter(f)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${txFilter === f ? 'bg-primary text-black' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {pendingWithdrawals.length > 0 && (
-                <div className="mb-6 p-4 rounded-xl bg-yellow-500/5 border border-yellow-500/20">
-                  <div className="font-semibold mb-3 text-yellow-400 flex items-center gap-2">
-                    <AlertTriangle size={18} /> Pending Withdrawals
-                  </div>
-                  <div className="space-y-2">
-                    {pendingWithdrawals.map((tx) => {
-                      const user = state.users.find(u => u.id === tx.userId);
-                      return (
-                        <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-black/30">
-                          <div>
-                            <span className="font-bold">{formatCurrency(tx.amount)}</span>
-                            <span className="text-sm text-white/50 ml-2">{user?.username} • {new Date(tx.timestamp).toLocaleString()}</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={() => handleApproveWithdrawal(tx.id)} className="bg-chart-2 hover:bg-chart-2/90 text-black font-bold h-8">
-                              <Check size={14} className="mr-1" /> Approve
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => handleRejectWithdrawal(tx.id)} className="border-destructive/50 text-destructive hover:bg-destructive/10 h-8">
-                              <X size={14} className="mr-1" /> Reject
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-white/10 text-white/50">
-                      <th className="text-left py-2 px-3">User</th>
-                      <th className="text-left py-2 px-3">Type</th>
-                      <th className="text-right py-2 px-3">Amount</th>
-                      <th className="text-center py-2 px-3">Status</th>
-                      <th className="text-left py-2 px-3">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTx.slice(0, 80).map((tx) => {
-                      const user = state.users.find(u => u.id === tx.userId);
-                      return (
-                        <tr key={tx.id} className="border-b border-white/5 hover:bg-white/3">
-                          <td className="py-2 px-3">{user?.username || 'Unknown'}</td>
-                          <td className="py-2 px-3 capitalize">{tx.type}</td>
-                          <td className="py-2 px-3 text-right font-semibold">{formatCurrency(tx.amount)}</td>
-                          <td className="py-2 px-3 text-center">{statusBadge(tx.status)}</td>
-                          <td className="py-2 px-3 text-white/40 text-xs">{new Date(tx.timestamp).toLocaleString()}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* News */}
-          <TabsContent value="news">
-            <div className="glassmorphism p-8 rounded-xl">
-              <h2 className="text-2xl font-bold mb-6">Publish Market News</h2>
-              <form onSubmit={handlePublishNews} className="space-y-6">
-                <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Input value={newsTitle} onChange={(e) => setNewsTitle(e.target.value)} placeholder="Breaking: SpaceX announces..." className="bg-input border-white/10" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Summary</Label>
-                  <Textarea value={newsSummary} onChange={(e) => setNewsSummary(e.target.value)} placeholder="Brief summary..." className="bg-input border-white/10 min-h-24" />
-                </div>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label>Category</Label>
-                    <Select value={newsCategory} onValueChange={(v: any) => setNewsCategory(v)}>
-                      <SelectTrigger className="bg-input border-white/10"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {['earnings', 'launch', 'starlink', 'starship', 'corporate'].map(c => (
-                          <SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Market Impact</Label>
-                    <Select value={newsImpact} onValueChange={(v: any) => setNewsImpact(v)}>
-                      <SelectTrigger className="bg-input border-white/10"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {['positive', 'neutral', 'negative'].map(c => (
-                          <SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-black font-bold text-lg py-6">
-                  <FileText size={18} className="mr-2" /> Publish News
-                </Button>
-              </form>
-            </div>
-          </TabsContent>
-
-          {/* Settings */}
-          <TabsContent value="settings">
-            <div className="glassmorphism p-8 rounded-xl">
-              <h2 className="text-2xl font-bold mb-2 flex items-center gap-3"><Settings size={22} /> Platform Configuration</h2>
-              <p className="text-white/50 text-sm mb-8">Update deposit addresses, bank details, and contact information. Changes apply immediately to all users.</p>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="font-bold text-primary border-b border-primary/20 pb-2">Crypto Deposit</h3>
-                  <div className="space-y-2">
-                    <Label className="text-white/60 text-xs">USDC Wallet Address</Label>
-                    <Input value={siteConfig.cryptoWalletAddress} onChange={(e) => setSiteConfig(p => ({ ...p, cryptoWalletAddress: e.target.value }))} className="bg-input border-white/10 font-mono text-sm" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white/60 text-xs">Network / Token Description</Label>
-                    <Input value={siteConfig.cryptoNetwork} onChange={(e) => setSiteConfig(p => ({ ...p, cryptoNetwork: e.target.value }))} className="bg-input border-white/10 text-sm" />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-bold text-primary border-b border-primary/20 pb-2">Bank / Wire Transfer</h3>
-                  <div className="space-y-2">
-                    <Label className="text-white/60 text-xs">Bank Name</Label>
-                    <Input value={siteConfig.bankName} onChange={(e) => setSiteConfig(p => ({ ...p, bankName: e.target.value }))} className="bg-input border-white/10 text-sm" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label className="text-white/60 text-xs">Routing Number</Label>
-                      <Input value={siteConfig.bankRouting} onChange={(e) => setSiteConfig(p => ({ ...p, bankRouting: e.target.value }))} className="bg-input border-white/10 font-mono text-sm" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-white/60 text-xs">Account Number</Label>
-                      <Input value={siteConfig.bankAccount} onChange={(e) => setSiteConfig(p => ({ ...p, bankAccount: e.target.value }))} className="bg-input border-white/10 font-mono text-sm" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white/60 text-xs">SWIFT / BIC Code</Label>
-                    <Input value={siteConfig.wireSwift} onChange={(e) => setSiteConfig(p => ({ ...p, wireSwift: e.target.value }))} className="bg-input border-white/10 font-mono text-sm" />
-                  </div>
-                </div>
-
-                <div className="space-y-4 md:col-span-2">
-                  <h3 className="font-bold text-primary border-b border-primary/20 pb-2">Contact</h3>
-                  <div className="space-y-2">
-                    <Label className="text-white/60 text-xs">Support Email</Label>
-                    <Input value={siteConfig.supportEmail} onChange={(e) => setSiteConfig(p => ({ ...p, supportEmail: e.target.value }))} className="bg-input border-white/10 text-sm" />
-                  </div>
-                </div>
-              </div>
-
-              <Button onClick={handleSaveConfig} className="mt-8 w-full bg-primary hover:bg-primary/90 text-black font-bold text-lg py-6">
-                Save Configuration
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+      <div className="flex overflow-x-auto border-b border-white/10">
+        {TABS.map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-6 py-4 font-display text-sm tracking-widest uppercase whitespace-nowrap transition-colors cursor-pointer border-b-2 ${tab === t ? 'border-white text-white' : 'border-transparent text-white/50 hover:text-white/80'}`}>
+            {t}
+          </button>
+        ))}
       </div>
+
+      <main className="p-6 max-w-5xl mx-auto">
+        {loading && <p className="text-white/40 font-display tracking-widest uppercase text-sm">Loading...</p>}
+
+        {!loading && tab === 'Investors' && (
+          <div className="space-y-3">
+            {investors.length === 0 && <p className="text-white/40">No investors yet.</p>}
+            {investors.map(inv => (
+              <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-white/10 p-4">
+                <div>
+                  <div className="font-display font-bold tracking-wider">{inv.fullName}</div>
+                  <div className="text-sm text-white/50">{inv.email}</div>
+                  <div className="text-xs text-white/30 mt-1">Shares: {parseFloat(inv.shares).toFixed(4)} · Avg Cost: ${parseFloat(inv.avgCost).toFixed(2)}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-display tracking-widest uppercase px-3 py-1 rounded-full ${inv.status === 'approved' ? 'bg-green-500/20 text-green-400' : inv.status === 'rejected' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                    {inv.status}
+                  </span>
+                  {inv.status !== 'approved' && (
+                    <button onClick={() => handleStatusUpdate(inv.id, 'approved')} className="p-2 border border-white/10 hover:border-green-400 hover:text-green-400 transition-colors cursor-pointer"><Check className="w-4 h-4" /></button>
+                  )}
+                  {inv.status !== 'rejected' && (
+                    <button onClick={() => handleStatusUpdate(inv.id, 'rejected')} className="p-2 border border-white/10 hover:border-red-400 hover:text-red-400 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && tab === 'Deposits' && (
+          <div className="space-y-3">
+            {deposits.length === 0 && <p className="text-white/40">No deposits yet.</p>}
+            {deposits.map(dep => (
+              <div key={dep.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-white/10 p-4">
+                <div>
+                  <div className="font-display font-bold tracking-wider">{dep.fullName} <span className="text-white/40 text-sm">({dep.email})</span></div>
+                  <div className="text-sm text-white/50">${parseFloat(dep.amount).toFixed(2)} · {dep.method}{dep.coin ? ` (${dep.coin})` : ''}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-display tracking-widest uppercase px-3 py-1 rounded-full ${dep.status === 'completed' ? 'bg-green-500/20 text-green-400' : dep.status === 'failed' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                    {dep.status}
+                  </span>
+                  {dep.status === 'pending' && (
+                    <>
+                      <button onClick={() => handleDepositStatus(dep.id, 'completed')} className="p-2 border border-white/10 hover:border-green-400 hover:text-green-400 transition-colors cursor-pointer"><Check className="w-4 h-4" /></button>
+                      <button onClick={() => handleDepositStatus(dep.id, 'failed')} className="p-2 border border-white/10 hover:border-red-400 hover:text-red-400 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && tab === 'Credit User' && (
+          <form onSubmit={handleCredit} className="max-w-md space-y-5">
+            <div>
+              <label className="block text-xs text-white/40 font-display tracking-widest uppercase mb-2">Investor</label>
+              <select value={creditInvestorId} onChange={(e) => setCreditInvestorId(e.target.value)}
+                className="w-full bg-black/50 border border-white/30 text-white px-5 py-4 focus:outline-none focus:border-white/80 font-display tracking-wider">
+                <option value="">Select investor</option>
+                {investors.filter(i => i.status === 'approved').map(inv => (
+                  <option key={inv.id} value={inv.id}>{inv.fullName} ({inv.email})</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-xs text-white/40 font-display tracking-widest uppercase mb-2">Shares</label>
+                <input type="number" step="0.0001" value={creditShares} onChange={(e) => setCreditShares(e.target.value)}
+                  className="w-full bg-black/50 border border-white/30 text-white px-5 py-4 focus:outline-none focus:border-white/80 font-display tracking-wider" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs text-white/40 font-display tracking-widest uppercase mb-2">Price / Share</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                  <input type="number" step="0.01" value={creditPrice} onChange={(e) => setCreditPrice(e.target.value)}
+                    className="w-full bg-black/50 border border-white/30 text-white pl-9 pr-5 py-4 focus:outline-none focus:border-white/80 font-display tracking-wider" />
+                </div>
+              </div>
+            </div>
+            <button type="submit" className="w-full bg-white text-black font-display font-bold text-lg tracking-widest uppercase py-4 hover:bg-white/90 transition-colors cursor-pointer">
+              Credit Shares
+            </button>
+          </form>
+        )}
+
+        {!loading && tab === 'Deposit Addresses' && (
+          <div className="space-y-5 max-w-lg">
+            {['BTC', 'ETH', 'DOGE'].map(coin => (
+              <div key={coin} className="border border-white/10 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Wallet className="w-4 h-4 text-white/50" />
+                  <span className="font-display font-bold tracking-widest">{coin}</span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={addressEdits[coin] ?? ''}
+                    onChange={(e) => setAddressEdits({ ...addressEdits, [coin]: e.target.value })}
+                    className="flex-1 bg-black/50 border border-white/30 text-white px-4 py-3 focus:outline-none focus:border-white/80 text-sm"
+                  />
+                  <button onClick={() => handleAddressSave(coin)} className="px-4 py-2 border border-white/30 font-display text-xs tracking-widest uppercase hover:bg-white/5 transition-colors cursor-pointer">
+                    Save
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 }

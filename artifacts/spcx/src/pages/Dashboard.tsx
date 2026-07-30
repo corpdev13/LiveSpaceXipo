@@ -1,424 +1,160 @@
-import { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'wouter';
+import { Menu, Bell } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Link, useLocation } from 'wouter';
-import { getCurrentUser, getState, buyShares, sellShares } from '@/lib/store';
-import { formatCurrency, formatNumber } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ArrowUpRight, ArrowDownRight, DollarSign, TrendingUp, Wallet, PieChart as PieChartIcon } from 'lucide-react';
-import { toast } from 'sonner';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useGetStockQuote, useGetStockHistory, GetStockHistoryPeriod, getGetStockQuoteQueryKey, getGetStockHistoryQueryKey, useGetHoldings, getGetHoldingsQueryKey } from '@workspace/api-client-react';
+import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
+import SideNav from '../components/SideNav';
 
 export default function Dashboard() {
-  const user = getCurrentUser();
   const [, setLocation] = useLocation();
-  const [state, setState] = useState(getState());
-  const [showBuyModal, setShowBuyModal] = useState(false);
-  const [showSellModal, setShowSellModal] = useState(false);
-  const [buyAmount, setBuyAmount] = useState('');
-  const [sellAmount, setSellAmount] = useState('');
+  const [activePeriod, setActivePeriod] = useState<GetStockHistoryPeriod>('1D' as GetStockHistoryPeriod);
+  const [isLive, setIsLive] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('spcx_user') || 'null') : null;
+  const email: string = user?.email ?? '';
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setState(getState());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!user) setLocation('/signin');
+  }, [user, setLocation]);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Access Restricted</h1>
-          <p className="text-white/60 mb-6">Please log in to access your dashboard</p>
-          <Link href="/">
-            <Button className="bg-primary hover:bg-primary/90 text-black font-semibold">
-              Return to Home
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const { data: quote } = useGetStockQuote({ query: { refetchInterval: 30000, queryKey: getGetStockQuoteQueryKey() } });
+  const { data: history } = useGetStockHistory({ period: activePeriod }, { query: { refetchInterval: 30000, queryKey: getGetStockHistoryQueryKey({ period: activePeriod }) } });
+  const { data: holdings } = useGetHoldings({ email }, { query: { enabled: !!email, queryKey: getGetHoldingsQueryKey({ email }) } });
 
-  const portfolioValue = user.balance + (user.shares * state.spcxPrice);
-  const avgCost = 118.40;
-  const totalInvested = user.shares * avgCost;
-  const unrealizedPL = (user.shares * state.spcxPrice) - totalInvested;
-  const plPercent = totalInvested > 0 ? (unrealizedPL / totalInvested) * 100 : 0;
+  const handleSignOut = () => {
+    localStorage.removeItem('spcx_user');
+    setLocation('/');
+  };
 
-  const userTransactions = state.transactions.filter(t => t.userId === user.id).slice(0, 10);
+  const periods = ['Live', '1D', '1W', '1M', '3M', '1Y', '5Y'];
 
-  const portfolioData = [
-    { name: 'Cash', value: user.balance, color: '#00A0E9' },
-    { name: 'SPCX Holdings', value: user.shares * state.spcxPrice, color: '#00E5A0' },
-  ];
-
-  const handleBuy = () => {
-    const shares = Number(buyAmount);
-    if (!shares || shares <= 0) {
-      toast.error('Please enter a valid number of shares');
-      return;
-    }
-
-    const cost = shares * state.spcxPrice;
-    if (cost > user.balance) {
-      toast.error('Insufficient balance');
-      return;
-    }
-
-    try {
-      buyShares(shares);
-      toast.success(`✅ Successfully bought ${shares} SPCX shares at ${formatCurrency(state.spcxPrice)}`);
-      setBuyAmount('');
-      setShowBuyModal(false);
-      setState(getState());
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Transaction failed');
+  const handlePeriodClick = (p: string) => {
+    if (p === 'Live') {
+      setIsLive(true);
+      setActivePeriod('1D' as GetStockHistoryPeriod);
+    } else {
+      setIsLive(false);
+      setActivePeriod(p as GetStockHistoryPeriod);
     }
   };
 
-  const handleSell = () => {
-    const shares = Number(sellAmount);
-    if (!shares || shares <= 0) {
-      toast.error('Please enter a valid number of shares');
-      return;
-    }
-
-    if (shares > user.shares) {
-      toast.error('Insufficient shares');
-      return;
-    }
-
-    try {
-      sellShares(shares);
-      toast.success(`✅ Successfully sold ${shares} SPCX shares at ${formatCurrency(state.spcxPrice)}`);
-      setSellAmount('');
-      setShowSellModal(false);
-      setState(getState());
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Transaction failed');
-    }
-  };
-
-  const buyTotal = buyAmount ? Number(buyAmount) * state.spcxPrice : 0;
-  const sellTotal = sellAmount ? Number(sellAmount) * state.spcxPrice : 0;
+  const shares = parseFloat(holdings?.shares ?? '0');
+  const currentPrice = quote?.price ?? 147.62;
+  const marketValue = (shares * currentPrice).toFixed(2);
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-5xl font-bold mb-2">Dashboard</h1>
-          <p className="text-white/60 text-lg">Welcome back, {user.username}</p>
+    <div className="min-h-[100dvh] bg-[#050a0f] text-white selection:bg-white/20 flex flex-col">
+      <SideNav open={menuOpen} onClose={() => setMenuOpen(false)} onSignOut={handleSignOut} />
+      <header className="flex items-center justify-between px-6 py-5 border-b border-white/5">
+        <button onClick={() => setMenuOpen(true)} className="text-white/70 hover:text-white transition-colors cursor-pointer">
+          <Menu className="w-6 h-6" />
+        </button>
+        <button className="text-white/70 hover:text-white transition-colors cursor-pointer">
+          <Bell className="w-6 h-6" />
+        </button>
+      </header>
+
+      <main className="flex-1 px-6 py-8 max-w-4xl mx-auto w-full">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-8">
+          <h1 className="text-3xl font-bold font-display uppercase tracking-widest mb-1">SpaceX</h1>
+          <p className="text-sm text-white/50 tracking-wider font-display">SPCX • NASDAQ • USD</p>
+          {user?.fullName && <p className="text-xs text-white/30 tracking-widest font-display mt-1 uppercase">Welcome, {user.fullName}</p>}
         </motion.div>
 
-        {/* Portfolio Summary Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="glassmorphism p-6 rounded-xl"
-            data-testid="card-portfolio-value"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <PieChartIcon className="text-primary" size={20} />
-              <span className="text-sm text-white/60">Portfolio Value</span>
-            </div>
-            <div className="text-3xl font-bold">{formatCurrency(portfolioValue)}</div>
-          </motion.div>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="mb-6">
+          <div className="text-6xl sm:text-7xl font-bold font-display tracking-tight mb-2">
+            ${quote?.price ? quote.price.toFixed(2) : '147.62'}
+          </div>
+          <div className="flex items-center gap-2 text-red-500 font-display text-lg tracking-wider">
+            <span className="text-xs">▼</span>
+            <span>${quote?.change ? Math.abs(quote.change).toFixed(2) : '1.86'} ({quote?.changePct ? Math.abs(quote.changePct).toFixed(2) : '1.24'}%)</span>
+            <span className="text-white/50 ml-2">Today</span>
+          </div>
+        </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="glassmorphism p-6 rounded-xl"
-            data-testid="card-cash-balance"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <Wallet className="text-chart-2" size={20} />
-              <span className="text-sm text-white/60">Cash Balance</span>
-            </div>
-            <div className="text-3xl font-bold">{formatCurrency(user.balance)}</div>
-          </motion.div>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex flex-wrap gap-2 mb-8">
+          {periods.map(p => {
+            const isActive = p === 'Live' ? isLive : (!isLive && activePeriod === p);
+            return (
+              <button key={p} onClick={() => handlePeriodClick(p)}
+                className={`px-4 py-1.5 rounded-full text-xs font-display font-medium tracking-widest transition-all cursor-pointer ${isActive ? 'bg-white/10 text-white border border-white/20' : 'text-white/50 hover:text-white/80 hover:bg-white/5 border border-transparent'}`}>
+                {p === 'Live' && isActive && <span className="inline-block w-1.5 h-1.5 bg-green-500 rounded-full mr-2 animate-pulse" />}
+                {p}
+              </button>
+            );
+          })}
+        </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="glassmorphism p-6 rounded-xl"
-            data-testid="card-holdings"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="text-chart-4" size={20} />
-              <span className="text-sm text-white/60">SPCX Holdings</span>
-            </div>
-            <div className="text-3xl font-bold">{user.shares}</div>
-            <div className="text-sm text-white/60 mt-1">{formatCurrency(user.shares * state.spcxPrice)}</div>
-          </motion.div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.3 }} className="h-[200px] w-full mb-12 -mx-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={history?.data || []}>
+              <defs>
+                <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <YAxis domain={['auto', 'auto']} hide />
+              <Area type="monotone" dataKey="price" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" isAnimationActive={true} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="glassmorphism p-6 rounded-xl"
-            data-testid="card-pl"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <DollarSign className={unrealizedPL >= 0 ? 'text-chart-2' : 'text-destructive'} size={20} />
-              <span className="text-sm text-white/60">Unrealized P&L</span>
-            </div>
-            <div className={`text-3xl font-bold ${unrealizedPL >= 0 ? 'text-chart-2' : 'text-destructive'}`}>
-              {unrealizedPL >= 0 ? '+' : ''}{formatCurrency(unrealizedPL)}
-            </div>
-            <div className={`text-sm mt-1 ${unrealizedPL >= 0 ? 'text-chart-2' : 'text-destructive'}`}>
-              {plPercent >= 0 ? '+' : ''}{plPercent.toFixed(2)}%
-            </div>
-          </motion.div>
-        </div>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }}>
+          <h2 className="text-xl font-bold font-display uppercase tracking-widest mb-6">Key Market Stats</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[
+              { label: '24h Vol', value: quote?.volume || '25.69M' },
+              { label: 'Mkt Cap', value: quote?.marketCap || '$1.92T' },
+              { label: 'Bid', value: quote?.bid ? `$${quote.bid.toFixed(2)}` : '$147.63' },
+              { label: 'Ask', value: quote?.ask ? `$${quote.ask.toFixed(2)}` : '$147.72' },
+              { label: 'Day Range', value: quote?.dayLow ? `$${quote.dayLow.toFixed(2)} – $${quote.dayHigh?.toFixed(2)}` : '$147.36 – $158.93' },
+              { label: '52W High', value: quote?.week52High ? `$${quote.week52High.toFixed(2)}` : '$178.45' },
+              { label: '52W Low', value: quote?.week52Low ? `$${quote.week52Low.toFixed(2)}` : '$135.00' },
+              { label: 'P/E Ratio', value: quote?.peRatio || '—' },
+              { label: 'Avg Vol (30D)', value: quote?.avgVolume || '25.69M' },
+              { label: 'Shares Out', value: quote?.sharesOut || '13.00B' },
+            ].map((stat, i) => (
+              <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.4 + i * 0.05 }} className="bg-[#0a0f14] p-4 border border-white/5">
+                <div className="text-xs text-white/50 font-display tracking-widest uppercase mb-1">{stat.label}</div>
+                <div className="text-lg font-bold font-display tracking-wider">{stat.value}</div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
 
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="glassmorphism p-6 rounded-xl mb-8"
-        >
-          <h2 className="text-2xl font-bold mb-4">Quick Actions</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link href="/deposit">
-              <Button className="w-full bg-chart-2 hover:bg-chart-2/90 text-black font-semibold" data-testid="button-deposit">
-                <ArrowUpRight size={16} className="mr-2" />
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.8 }} className="mt-12">
+          <div className="bg-[#0a0f14] p-6 border border-white/5 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-white/20" />
+            <div className="flex justify-between items-end mb-1">
+              <div>
+                <div className="text-xs text-white/50 font-display tracking-widest uppercase mb-2">Your Holdings</div>
+                <div className="text-2xl font-bold font-display tracking-wider">{shares > 0 ? shares.toFixed(4) : '0'} Shares</div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-white/50 font-display tracking-widest uppercase mb-1">Market Value</div>
+                <div className="text-xl font-bold font-display tracking-wider">${shares > 0 ? marketValue : '0.00'}</div>
+              </div>
+            </div>
+            <div className="text-sm text-white/50 font-display tracking-widest uppercase mt-4">
+              Avg Cost: ${holdings?.avgCost ? parseFloat(holdings.avgCost).toFixed(2) : '0.00'}
+            </div>
+            {shares === 0 && (
+              <button onClick={() => setLocation('/orders')} className="mt-4 w-full bg-[#1a8a4a] hover:bg-[#1a9a52] text-white font-display font-bold text-sm tracking-widest uppercase py-3 transition-colors cursor-pointer">
                 Deposit Funds
-              </Button>
-            </Link>
-            <Link href="/withdraw">
-              <Button variant="outline" className="w-full border-white/20" data-testid="button-withdraw">
-                <ArrowDownRight size={16} className="mr-2" />
-                Withdraw
-              </Button>
-            </Link>
-            <Button
-              onClick={() => setShowBuyModal(true)}
-              className="w-full bg-primary hover:bg-primary/90 text-black font-semibold"
-              data-testid="button-buy-shares"
-            >
-              Buy Shares
-            </Button>
-            <Button
-              onClick={() => setShowSellModal(true)}
-              variant="outline"
-              className="w-full border-destructive/50 text-destructive hover:bg-destructive/10"
-              data-testid="button-sell-shares"
-            >
-              Sell Shares
-            </Button>
+              </button>
+            )}
           </div>
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Portfolio Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="glassmorphism p-6 rounded-xl"
-          >
-            <h2 className="text-2xl font-bold mb-4">Portfolio Allocation</h2>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={portfolioData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {portfolioData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: number) => formatCurrency(value)}
-                    contentStyle={{
-                      backgroundColor: '#1a1a1a',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
-
-          {/* Recent Transactions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="glassmorphism p-6 rounded-xl"
-          >
-            <h2 className="text-2xl font-bold mb-4">Recent Transactions</h2>
-            <div className="space-y-3">
-              {userTransactions.length === 0 ? (
-                <p className="text-white/60 text-center py-8">No transactions yet</p>
-              ) : (
-                userTransactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
-                    <div className="flex-1">
-                      <div className="font-semibold capitalize">{tx.type}</div>
-                      <div className="text-xs text-white/60">{new Date(tx.timestamp).toLocaleString()}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`font-bold ${tx.type === 'deposit' || tx.type === 'sell' ? 'text-chart-2' : 'text-white'}`}>
-                        {tx.type === 'deposit' || tx.type === 'sell' ? '+' : '-'}{formatCurrency(tx.amount)}
-                      </div>
-                      <div className={`text-xs px-2 py-0.5 rounded-full inline-block ${
-                        tx.status === 'completed' ? 'bg-chart-2/20 text-chart-2' :
-                        tx.status === 'pending' ? 'bg-chart-4/20 text-chart-4' :
-                        'bg-destructive/20 text-destructive'
-                      }`}>
-                        {tx.status}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </motion.div>
+        <div className="mt-16 mb-8 text-center">
+          <button onClick={handleSignOut} className="text-white/40 hover:text-white transition-colors text-sm font-display tracking-widest uppercase underline decoration-white/20 underline-offset-4 cursor-pointer">
+            Sign out
+          </button>
         </div>
-      </div>
-
-      {/* Buy Modal */}
-      <Dialog open={showBuyModal} onOpenChange={setShowBuyModal}>
-        <DialogContent className="sm:max-w-md bg-card border-white/20">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Buy SPCX Shares</DialogTitle>
-            <DialogDescription className="text-white/60">
-              Current price: {formatCurrency(state.spcxPrice)}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="buy-shares">Number of Shares</Label>
-              <Input
-                id="buy-shares"
-                type="number"
-                placeholder="0"
-                value={buyAmount}
-                onChange={(e) => setBuyAmount(e.target.value)}
-                className="bg-input border-white/10"
-                data-testid="input-buy-shares"
-              />
-            </div>
-
-            {buyAmount && (
-              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
-                <div className="flex justify-between mb-2">
-                  <span className="text-white/60">Total Cost:</span>
-                  <span className="font-bold text-xl">{formatCurrency(buyTotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/60">Available Balance:</span>
-                  <span className={user.balance >= buyTotal ? 'text-chart-2' : 'text-destructive'}>
-                    {formatCurrency(user.balance)}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-2">
-              <Button
-                onClick={handleBuy}
-                className="flex-1 bg-primary hover:bg-primary/90 text-black font-semibold"
-                disabled={!buyAmount || buyTotal > user.balance}
-                data-testid="button-confirm-buy"
-              >
-                Confirm Purchase
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowBuyModal(false)}
-                className="border-white/20"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Sell Modal */}
-      <Dialog open={showSellModal} onOpenChange={setShowSellModal}>
-        <DialogContent className="sm:max-w-md bg-card border-white/20">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Sell SPCX Shares</DialogTitle>
-            <DialogDescription className="text-white/60">
-              Current price: {formatCurrency(state.spcxPrice)}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="sell-shares">Number of Shares</Label>
-              <Input
-                id="sell-shares"
-                type="number"
-                placeholder="0"
-                value={sellAmount}
-                onChange={(e) => setSellAmount(e.target.value)}
-                className="bg-input border-white/10"
-                data-testid="input-sell-shares"
-              />
-            </div>
-
-            {sellAmount && (
-              <div className="p-4 rounded-lg bg-chart-2/10 border border-chart-2/20">
-                <div className="flex justify-between mb-2">
-                  <span className="text-white/60">Total Proceeds:</span>
-                  <span className="font-bold text-xl text-chart-2">{formatCurrency(sellTotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/60">Available Shares:</span>
-                  <span className={user.shares >= Number(sellAmount) ? 'text-chart-2' : 'text-destructive'}>
-                    {user.shares}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-2">
-              <Button
-                onClick={handleSell}
-                className="flex-1 bg-chart-2 hover:bg-chart-2/90 text-black font-semibold"
-                disabled={!sellAmount || Number(sellAmount) > user.shares}
-                data-testid="button-confirm-sell"
-              >
-                Confirm Sale
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowSellModal(false)}
-                className="border-white/20"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      </main>
     </div>
   );
 }

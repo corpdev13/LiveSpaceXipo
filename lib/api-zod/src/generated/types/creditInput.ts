@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface CreditInput {
+  /** @minimum 0 */
+  shares: number;
+  /** @minimum 0 */
+  pricePerShare: number;
 }

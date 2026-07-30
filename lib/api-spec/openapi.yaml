@@ -10,13 +10,24 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: investors
+    description: Investor signup operations
+  - name: auth
+    description: Authentication
+  - name: stock
+    description: Stock market data
+  - name: deposits
+    description: Deposit operations
+  - name: holdings
+    description: User holdings
+  - name: admin
+    description: Admin operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,348 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /investors:
+    post:
+      operationId: createInvestor
+      tags: [investors]
+      summary: Sign up for investor access
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestorInput"
+      responses:
+        "201":
+          description: Investor registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Investor"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /investors/count:
+    get:
+      operationId: getInvestorCount
+      tags: [investors]
+      summary: Get number of registered investors
+      responses:
+        "200":
+          description: Investor count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestorCount"
+
+  /signin:
+    post:
+      operationId: signIn
+      tags: [auth]
+      summary: Sign in with email — returns investor status
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignInInput"
+      responses:
+        "200":
+          description: Sign in result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignInResult"
+        "404":
+          description: Email not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stock/quote:
+    get:
+      operationId: getStockQuote
+      tags: [stock]
+      summary: Get current SPCX stock quote
+      responses:
+        "200":
+          description: Current stock quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockQuote"
+
+  /stock/history:
+    get:
+      operationId: getStockHistory
+      tags: [stock]
+      summary: Get SPCX price history
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [1D, 1W, 1M, 3M, 1Y, 5Y]
+          required: false
+      responses:
+        "200":
+          description: Price history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockHistory"
+
+  /holdings:
+    get:
+      operationId: getHoldings
+      tags: [holdings]
+      summary: Get holdings for the current user (by email query param)
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User holdings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Holdings"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deposits:
+    post:
+      operationId: createDeposit
+      tags: [deposits]
+      summary: Submit a deposit request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepositInput"
+      responses:
+        "201":
+          description: Deposit created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepositRecord"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /deposit-addresses:
+    get:
+      operationId: getDepositAddresses
+      tags: [deposits]
+      summary: Get public crypto deposit addresses
+      responses:
+        "200":
+          description: Deposit addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DepositAddress"
+
+  /admin/investors:
+    get:
+      operationId: listAdminInvestors
+      tags: [admin]
+      summary: List all investors (admin only)
+      responses:
+        "200":
+          description: List of investors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InvestorAdmin"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/investors/{id}/status:
+    patch:
+      operationId: updateInvestorStatus
+      tags: [admin]
+      summary: Update investor status (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestorStatusInput"
+      responses:
+        "200":
+          description: Updated investor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestorAdmin"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/investors/{id}/credit:
+    post:
+      operationId: creditInvestor
+      tags: [admin]
+      summary: Manually credit shares to an investor (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditInput"
+      responses:
+        "200":
+          description: Updated holdings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Holdings"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/deposits:
+    get:
+      operationId: listAdminDeposits
+      tags: [admin]
+      summary: List all deposits (admin only)
+      responses:
+        "200":
+          description: List of deposits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DepositAdmin"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/deposit-addresses:
+    get:
+      operationId: adminGetDepositAddresses
+      tags: [admin]
+      summary: Get all deposit addresses (admin only)
+      responses:
+        "200":
+          description: Deposit addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DepositAddress"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/deposit-addresses/{coin}:
+    put:
+      operationId: updateDepositAddress
+      tags: [admin]
+      summary: Update a deposit address (admin only)
+      parameters:
+        - name: coin
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDepositAddressInput"
+      responses:
+        "200":
+          description: Updated address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepositAddress"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +387,327 @@ components:
       required:
         - status
 
+    Investor:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        email:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - fullName
+        - email
+        - status
+        - createdAt
+
+    InvestorAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        email:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        createdAt:
+          type: string
+          format: date-time
+        shares:
+          type: string
+        avgCost:
+          type: string
+      required:
+        - id
+        - fullName
+        - email
+        - status
+        - createdAt
+        - shares
+        - avgCost
+
+    InvestorInput:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 1
+        email:
+          type: string
+      required:
+        - fullName
+        - email
+
+    InvestorCount:
+      type: object
+      properties:
+        count:
+          type: integer
+      required:
+        - count
+
+    InvestorStatusInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+      required:
+        - status
+
+    CreditInput:
+      type: object
+      properties:
+        shares:
+          type: number
+          minimum: 0
+        pricePerShare:
+          type: number
+          minimum: 0
+      required:
+        - shares
+        - pricePerShare
+
+    SignInInput:
+      type: object
+      properties:
+        email:
+          type: string
+      required:
+        - email
+
+    SignInResult:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        fullName:
+          type: string
+        email:
+          type: string
+      required:
+        - status
+        - fullName
+        - email
+
+    Holdings:
+      type: object
+      properties:
+        investorId:
+          type: integer
+        shares:
+          type: string
+        avgCost:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - investorId
+        - shares
+        - avgCost
+        - updatedAt
+
+    CreateDepositInput:
+      type: object
+      properties:
+        email:
+          type: string
+        amount:
+          type: number
+          minimum: 1
+        method:
+          type: string
+          enum: [card, crypto]
+        coin:
+          type: string
+          enum: [BTC, ETH, DOGE]
+      required:
+        - email
+        - amount
+        - method
+
+    DepositRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        investorId:
+          type: integer
+        email:
+          type: string
+        amount:
+          type: string
+        method:
+          type: string
+          enum: [card, crypto]
+        coin:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - investorId
+        - email
+        - amount
+        - method
+        - coin
+        - status
+        - createdAt
+
+    DepositAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+        investorId:
+          type: integer
+        fullName:
+          type: string
+        email:
+          type: string
+        amount:
+          type: string
+        method:
+          type: string
+          enum: [card, crypto]
+        coin:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - investorId
+        - fullName
+        - email
+        - amount
+        - method
+        - coin
+        - status
+        - createdAt
+
+    DepositAddress:
+      type: object
+      properties:
+        coin:
+          type: string
+        address:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - coin
+        - address
+        - updatedAt
+
+    UpdateDepositAddressInput:
+      type: object
+      properties:
+        address:
+          type: string
+          minLength: 10
+      required:
+        - address
+
+    StockQuote:
+      type: object
+      properties:
+        symbol:
+          type: string
+        price:
+          type: number
+        change:
+          type: number
+        changePct:
+          type: number
+        volume:
+          type: string
+        marketCap:
+          type: string
+        bid:
+          type: number
+        ask:
+          type: number
+        dayLow:
+          type: number
+        dayHigh:
+          type: number
+        week52High:
+          type: number
+        week52Low:
+          type: number
+        peRatio:
+          type: ["string", "null"]
+        avgVolume:
+          type: string
+        sharesOut:
+          type: string
+      required:
+        - symbol
+        - price
+        - change
+        - changePct
+        - volume
+        - marketCap
+        - bid
+        - ask
+        - dayLow
+        - dayHigh
+        - week52High
+        - week52Low
+        - peRatio
+        - avgVolume
+        - sharesOut
+
+    StockDataPoint:
+      type: object
+      properties:
+        time:
+          type: string
+        price:
+          type: number
+      required:
+        - time
+        - price
+
+    StockHistory:
+      type: object
+      properties:
+        period:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockDataPoint"
+      required:
+        - period
+        - data
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
