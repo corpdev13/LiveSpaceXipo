@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, investorsTable, holdingsTable, depositsTable, depositAddressesTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
+import { sendInvestorStatusEmail } from "../lib/email";
 
 const router = Router();
 
@@ -76,6 +77,15 @@ router.patch("/admin/investors/:id/status", async (req, res) => {
     }
 
     const [h] = await db.select().from(holdingsTable).where(eq(holdingsTable.investorId, investor.id));
+
+    if (investor.status === "approved" || investor.status === "rejected") {
+      // Fire-and-forget: never let a flaky email provider block the admin action.
+      void sendInvestorStatusEmail({
+        to: investor.email,
+        fullName: investor.fullName,
+        status: investor.status,
+      }).catch((err) => req.log.error({ err }, "Unhandled error sending investor status email"));
+    }
 
     res.json({
       id: investor.id,
