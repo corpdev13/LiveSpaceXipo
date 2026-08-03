@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './buyInput';
 export * from './createDepositInput';
 export * from './createDepositInputCoin';
 export * from './createDepositInputMethod';
@@ -31,9 +32,13 @@ export * from './investorInput';
 export * from './investorStatus';
 export * from './investorStatusInput';
 export * from './investorStatusInputStatus';
+export * from './listDepositsParams';
+export * from './sellInput';
 export * from './signInInput';
 export * from './signInResult';
 export * from './signInResultStatus';
+export * from './siteConfig';
+export * from './siteConfigUpdate';
 export * from './stockDataPoint';
 export * from './stockHistory';
 export * from './stockQuote';

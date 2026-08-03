@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, Link } from 'wouter';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Grid, ClipboardList, Bell, Users, Mail, Settings, LogOut, X } from 'lucide-react';
+import { Grid, ClipboardList, TrendingUp, Bell, Users, Mail, Settings, LogOut, X } from 'lucide-react';
 
 interface SideNavProps {
   open: boolean;
@@ -11,11 +11,12 @@ interface SideNavProps {
 
 const navItems = [
   { label: 'Overview', path: '/dashboard', icon: Grid },
+  { label: 'Trade', path: '/trade', icon: TrendingUp },
   { label: 'Orders', path: '/orders', icon: ClipboardList },
-  { label: 'Updates', path: '/dashboard', icon: Bell },
+  { label: 'Updates', path: '/updates', icon: Bell },
   { label: 'Management', path: '/management', icon: Users },
   { label: 'Support', path: '/support', icon: Mail },
-  { label: 'Settings', path: '/dashboard', icon: Settings },
+  { label: 'Settings', path: '/settings', icon: Settings },
 ];
 
 export default function SideNav({ open, onClose, onSignOut }: SideNavProps) {

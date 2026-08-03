@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, investorsTable, depositsTable, depositAddressesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 
 const router = Router();
@@ -57,6 +57,45 @@ router.post("/deposits", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Failed to create deposit");
+    res.status(500).json({ error: "Something went wrong." });
+  }
+});
+
+// GET /api/deposits?email= — deposit history for the current user
+router.get("/deposits", async (req, res) => {
+  const email = (req.query.email as string | undefined)?.toLowerCase().trim();
+  if (!email) {
+    res.status(400).json({ error: "Email is required." });
+    return;
+  }
+
+  try {
+    const [investor] = await db.select().from(investorsTable).where(eq(investorsTable.email, email)).limit(1);
+    if (!investor) {
+      res.status(404).json({ error: "Investor not found." });
+      return;
+    }
+
+    const rows = await db
+      .select()
+      .from(depositsTable)
+      .where(eq(depositsTable.investorId, investor.id))
+      .orderBy(desc(depositsTable.createdAt));
+
+    res.json(
+      rows.map((d) => ({
+        id: d.id,
+        investorId: d.investorId,
+        email: d.email,
+        amount: d.amount,
+        method: d.method,
+        coin: d.coin,
+        status: d.status,
+        createdAt: d.createdAt.toISOString(),
+      }))
+    );
+  } catch (err) {
+    req.log.error({ err }, "Failed to list deposits");
     res.status(500).json({ error: "Something went wrong." });
   }
 });

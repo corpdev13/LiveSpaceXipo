@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BuyInput,
   CreateDepositInput,
   CreditInput,
   DepositAddress,
@@ -35,8 +36,12 @@ import type {
   InvestorCount,
   InvestorInput,
   InvestorStatusInput,
+  ListDepositsParams,
+  SellInput,
   SignInInput,
   SignInResult,
+  SiteConfig,
+  SiteConfigUpdate,
   StockHistory,
   StockQuote,
   UpdateDepositAddressInput
@@ -610,6 +615,225 @@ export function useGetHoldings<TData = Awaited<ReturnType<typeof getHoldings>>, 
 
 
 
+export const getGetSiteConfigUrl = () => {
+
+
+
+
+  return `/api/site-config`
+}
+
+/**
+ * @summary Get public platform configuration (e.g. whether selling is enabled)
+ */
+export const getSiteConfig = async ( options?: RequestInit): Promise<SiteConfig> => {
+
+  return customFetch<SiteConfig>(getGetSiteConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSiteConfigQueryKey = () => {
+    return [
+    `/api/site-config`
+    ] as const;
+    }
+
+
+export const getGetSiteConfigQueryOptions = <TData = Awaited<ReturnType<typeof getSiteConfig>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSiteConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSiteConfig>>> = ({ signal }) => getSiteConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSiteConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSiteConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getSiteConfig>>>
+export type GetSiteConfigQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get public platform configuration (e.g. whether selling is enabled)
+ */
+
+export function useGetSiteConfig<TData = Awaited<ReturnType<typeof getSiteConfig>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSiteConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getBuySharesUrl = () => {
+
+
+
+
+  return `/api/trade/buy`
+}
+
+/**
+ * @summary Buy SPCX shares using available cash balance
+ */
+export const buyShares = async (buyInput: BuyInput, options?: RequestInit): Promise<Holdings> => {
+
+  return customFetch<Holdings>(getBuySharesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(buyInput)
+  }
+);}
+
+
+
+
+
+export const getBuySharesMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof buyShares>>, TError,{data: BodyType<BuyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof buyShares>>, TError,{data: BodyType<BuyInput>}, TContext> => {
+
+const mutationKey = ['buyShares'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof buyShares>>, {data: BodyType<BuyInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  buyShares(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BuySharesMutationResult = NonNullable<Awaited<ReturnType<typeof buyShares>>>
+    export type BuySharesMutationBody = BodyType<BuyInput>
+    export type BuySharesMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Buy SPCX shares using available cash balance
+ */
+export const useBuyShares = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof buyShares>>, TError,{data: BodyType<BuyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof buyShares>>,
+        TError,
+        {data: BodyType<BuyInput>},
+        TContext
+      > => {
+      return useMutation(getBuySharesMutationOptions(options));
+    }
+
+export const getSellSharesUrl = () => {
+
+
+
+
+  return `/api/trade/sell`
+}
+
+/**
+ * @summary Sell SPCX shares (only permitted while the admin has selling enabled)
+ */
+export const sellShares = async (sellInput: SellInput, options?: RequestInit): Promise<Holdings> => {
+
+  return customFetch<Holdings>(getSellSharesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(sellInput)
+  }
+);}
+
+
+
+
+
+export const getSellSharesMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sellShares>>, TError,{data: BodyType<SellInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sellShares>>, TError,{data: BodyType<SellInput>}, TContext> => {
+
+const mutationKey = ['sellShares'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sellShares>>, {data: BodyType<SellInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  sellShares(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SellSharesMutationResult = NonNullable<Awaited<ReturnType<typeof sellShares>>>
+    export type SellSharesMutationBody = BodyType<SellInput>
+    export type SellSharesMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Sell SPCX shares (only permitted while the admin has selling enabled)
+ */
+export const useSellShares = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sellShares>>, TError,{data: BodyType<SellInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sellShares>>,
+        TError,
+        {data: BodyType<SellInput>},
+        TContext
+      > => {
+      return useMutation(getSellSharesMutationOptions(options));
+    }
+
 export const getCreateDepositUrl = () => {
 
 
@@ -680,6 +904,90 @@ export const useCreateDeposit = <TError = ErrorType<ErrorResponse>,
       > => {
       return useMutation(getCreateDepositMutationOptions(options));
     }
+
+export const getListDepositsUrl = (params: ListDepositsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/deposits?${stringifiedParams}` : `/api/deposits`
+}
+
+/**
+ * @summary List deposits for the current user (by email query param)
+ */
+export const listDeposits = async (params: ListDepositsParams, options?: RequestInit): Promise<DepositRecord[]> => {
+
+  return customFetch<DepositRecord[]>(getListDepositsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListDepositsQueryKey = (params?: ListDepositsParams,) => {
+    return [
+    `/api/deposits`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListDepositsQueryOptions = <TData = Awaited<ReturnType<typeof listDeposits>>, TError = ErrorType<ErrorResponse>>(params: ListDepositsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDeposits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListDepositsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDeposits>>> = ({ signal }) => listDeposits(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDeposits>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListDepositsQueryResult = NonNullable<Awaited<ReturnType<typeof listDeposits>>>
+export type ListDepositsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List deposits for the current user (by email query param)
+ */
+
+export function useListDeposits<TData = Awaited<ReturnType<typeof listDeposits>>, TError = ErrorType<ErrorResponse>>(
+ params: ListDepositsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDeposits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListDepositsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetDepositAddressesUrl = () => {
 
@@ -1132,6 +1440,77 @@ export function useAdminGetDepositAddresses<TData = Awaited<ReturnType<typeof ad
 
 
 
+
+export const getUpdateSiteConfigUrl = () => {
+
+
+
+
+  return `/api/admin/site-config`
+}
+
+/**
+ * @summary Update platform configuration, e.g. enable/disable investor selling (admin only)
+ */
+export const updateSiteConfig = async (siteConfigUpdate: SiteConfigUpdate, options?: RequestInit): Promise<SiteConfig> => {
+
+  return customFetch<SiteConfig>(getUpdateSiteConfigUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(siteConfigUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateSiteConfigMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSiteConfig>>, TError,{data: BodyType<SiteConfigUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSiteConfig>>, TError,{data: BodyType<SiteConfigUpdate>}, TContext> => {
+
+const mutationKey = ['updateSiteConfig'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSiteConfig>>, {data: BodyType<SiteConfigUpdate>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateSiteConfig(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSiteConfigMutationResult = NonNullable<Awaited<ReturnType<typeof updateSiteConfig>>>
+    export type UpdateSiteConfigMutationBody = BodyType<SiteConfigUpdate>
+    export type UpdateSiteConfigMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Update platform configuration, e.g. enable/disable investor selling (admin only)
+ */
+export const useUpdateSiteConfig = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSiteConfig>>, TError,{data: BodyType<SiteConfigUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSiteConfig>>,
+        TError,
+        {data: BodyType<SiteConfigUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateSiteConfigMutationOptions(options));
+    }
 
 export const getUpdateDepositAddressUrl = (coin: string,) => {
 

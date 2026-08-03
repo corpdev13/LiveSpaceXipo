@@ -141,11 +141,17 @@ export default function Dashboard() {
             <div className="text-sm text-white/50 font-display tracking-widest uppercase mt-4">
               Avg Cost: ${holdings?.avgCost ? parseFloat(holdings.avgCost).toFixed(2) : '0.00'}
             </div>
-            {shares === 0 && (
-              <button onClick={() => setLocation('/orders')} className="mt-4 w-full bg-[#1a8a4a] hover:bg-[#1a9a52] text-white font-display font-bold text-sm tracking-widest uppercase py-3 transition-colors cursor-pointer">
+            <div className="text-sm text-white/50 font-display tracking-widest uppercase mt-2">
+              Cash Balance: ${parseFloat(holdings?.cashBalance ?? '0').toFixed(2)}
+            </div>
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setLocation('/orders')} className="flex-1 border border-white/20 hover:border-white/40 text-white font-display font-bold text-sm tracking-widest uppercase py-3 transition-colors cursor-pointer">
                 Deposit Funds
               </button>
-            )}
+              <button onClick={() => setLocation('/trade')} className="flex-1 bg-[#1a8a4a] hover:bg-[#1a9a52] text-white font-display font-bold text-sm tracking-widest uppercase py-3 transition-colors cursor-pointer">
+                Trade
+              </button>
+            </div>
           </div>
         </motion.div>
 

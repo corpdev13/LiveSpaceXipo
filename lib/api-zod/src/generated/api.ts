@@ -107,6 +107,57 @@ export const GetHoldingsResponse = zod.object({
   "investorId": zod.number(),
   "shares": zod.string(),
   "avgCost": zod.string(),
+  "cashBalance": zod.string(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get public platform configuration (e.g. whether selling is enabled)
+ */
+export const GetSiteConfigResponse = zod.object({
+  "sellingEnabled": zod.boolean()
+})
+
+
+/**
+ * @summary Buy SPCX shares using available cash balance
+ */
+export const buySharesBodyAmountUsdMin = 0.01;
+
+
+
+export const BuySharesBody = zod.object({
+  "email": zod.string(),
+  "amountUsd": zod.number().min(buySharesBodyAmountUsdMin)
+})
+
+export const BuySharesResponse = zod.object({
+  "investorId": zod.number(),
+  "shares": zod.string(),
+  "avgCost": zod.string(),
+  "cashBalance": zod.string(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Sell SPCX shares (only permitted while the admin has selling enabled)
+ */
+export const sellSharesBodySharesMin = 0.0001;
+
+
+
+export const SellSharesBody = zod.object({
+  "email": zod.string(),
+  "shares": zod.number().min(sellSharesBodySharesMin)
+})
+
+export const SellSharesResponse = zod.object({
+  "investorId": zod.number(),
+  "shares": zod.string(),
+  "avgCost": zod.string(),
+  "cashBalance": zod.string(),
   "updatedAt": zod.coerce.date()
 })
 
@@ -134,6 +185,26 @@ export const CreateDepositResponse = zod.object({
   "status": zod.enum(['pending', 'completed', 'failed']),
   "createdAt": zod.coerce.date()
 })
+
+
+/**
+ * @summary List deposits for the current user (by email query param)
+ */
+export const ListDepositsQueryParams = zod.object({
+  "email": zod.coerce.string()
+})
+
+export const ListDepositsResponseItem = zod.object({
+  "id": zod.number(),
+  "investorId": zod.number(),
+  "email": zod.string(),
+  "amount": zod.string(),
+  "method": zod.enum(['card', 'crypto']),
+  "coin": zod.string().nullable(),
+  "status": zod.enum(['pending', 'completed', 'failed']),
+  "createdAt": zod.coerce.date()
+})
+export const ListDepositsResponse = zod.array(ListDepositsResponseItem)
 
 
 /**
@@ -206,6 +277,7 @@ export const CreditInvestorResponse = zod.object({
   "investorId": zod.number(),
   "shares": zod.string(),
   "avgCost": zod.string(),
+  "cashBalance": zod.string(),
   "updatedAt": zod.coerce.date()
 })
 
@@ -236,6 +308,18 @@ export const AdminGetDepositAddressesResponseItem = zod.object({
   "updatedAt": zod.coerce.date()
 })
 export const AdminGetDepositAddressesResponse = zod.array(AdminGetDepositAddressesResponseItem)
+
+
+/**
+ * @summary Update platform configuration, e.g. enable/disable investor selling (admin only)
+ */
+export const UpdateSiteConfigBody = zod.object({
+  "sellingEnabled": zod.boolean()
+})
+
+export const UpdateSiteConfigResponse = zod.object({
+  "sellingEnabled": zod.boolean()
+})
 
 
 /**

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Lock, Check, X, DollarSign, Wallet } from 'lucide-react';
+import { Lock, Check, X, DollarSign, Wallet, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 type Investor = { id: number; fullName: string; email: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; shares: string; avgCost: string };
 type Deposit = { id: number; investorId: number; fullName: string; email: string; amount: string; method: 'card' | 'crypto'; coin: string | null; status: 'pending' | 'completed' | 'failed'; createdAt: string };
 type DepositAddress = { coin: string; address: string; updatedAt: string };
 
-const TABS = ['Investors', 'Deposits', 'Credit User', 'Deposit Addresses'] as const;
+const TABS = ['Investors', 'Deposits', 'Credit User', 'Deposit Addresses', 'Trading'] as const;
 type Tab = typeof TABS[number];
 
 async function adminFetch(path: string, password: string, options: RequestInit = {}) {
@@ -42,6 +42,8 @@ export default function Admin() {
   const [creditShares, setCreditShares] = useState('');
   const [creditPrice, setCreditPrice] = useState('');
   const [addressEdits, setAddressEdits] = useState<Record<string, string>>({});
+  const [sellingEnabled, setSellingEnabled] = useState(false);
+  const [savingConfig, setSavingConfig] = useState(false);
 
   const loadInvestors = async (pw: string) => {
     const data = await adminFetch('/admin/investors', pw);
@@ -57,6 +59,12 @@ export default function Admin() {
     const edits: Record<string, string> = {};
     data.forEach((a: DepositAddress) => { edits[a.coin] = a.address; });
     setAddressEdits(edits);
+  };
+  const loadSiteConfig = async () => {
+    const res = await fetch('/api/site-config');
+    if (!res.ok) throw new Error('Failed to load site config.');
+    const data = await res.json();
+    setSellingEnabled(data.sellingEnabled);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -79,9 +87,26 @@ export default function Admin() {
     setLoading(true);
     const load = tab === 'Investors' || tab === 'Credit User' ? loadInvestors
       : tab === 'Deposits' ? loadDeposits
+      : tab === 'Trading' ? loadSiteConfig
       : loadAddresses;
     load(password).catch((err) => toast.error(err.message)).finally(() => setLoading(false));
   }, [authed, tab]);
+
+  const handleToggleSelling = async () => {
+    setSavingConfig(true);
+    try {
+      await adminFetch('/admin/site-config', password, {
+        method: 'PATCH',
+        body: JSON.stringify({ sellingEnabled: !sellingEnabled }),
+      });
+      setSellingEnabled(!sellingEnabled);
+      toast.success(`Selling ${!sellingEnabled ? 'enabled' : 'disabled'} for investors.`);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSavingConfig(false);
+    }
+  };
 
   const handleStatusUpdate = async (id: number, status: 'approved' | 'rejected') => {
     try {
@@ -263,6 +288,32 @@ export default function Admin() {
               Credit Shares
             </button>
           </form>
+        )}
+
+        {!loading && tab === 'Trading' && (
+          <div className="max-w-md">
+            <div className="border border-white/10 p-6 flex items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <TrendingUp className="w-5 h-5 text-white/50 mt-0.5 shrink-0" />
+                <div>
+                  <div className="font-display font-bold tracking-widest uppercase">Investor Selling</div>
+                  <div className="text-xs text-white/40 mt-1 max-w-xs">
+                    Buying is always available to approved investors. Toggle this to allow them to sell shares back for cash.
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={handleToggleSelling}
+                disabled={savingConfig}
+                className={`w-14 h-8 rounded-full relative transition-colors shrink-0 cursor-pointer disabled:opacity-50 ${sellingEnabled ? 'bg-[#1a8a4a]' : 'bg-white/10'}`}
+              >
+                <div className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all ${sellingEnabled ? 'left-7' : 'left-1'}`} />
+              </button>
+            </div>
+            <p className="text-xs text-white/30 mt-4 tracking-wider">
+              Status: <span className={sellingEnabled ? 'text-green-400' : 'text-white/50'}>{sellingEnabled ? 'Selling enabled' : 'Selling disabled'}</span>
+            </p>
+          </div>
         )}
 
         {!loading && tab === 'Deposit Addresses' && (

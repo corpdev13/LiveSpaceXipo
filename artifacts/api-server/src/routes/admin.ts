@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, investorsTable, holdingsTable, depositsTable, depositAddressesTable } from "@workspace/db";
+import { db, investorsTable, holdingsTable, depositsTable, depositAddressesTable, siteConfigTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { sendInvestorStatusEmail } from "../lib/email";
@@ -196,6 +196,13 @@ router.patch("/admin/deposits/:id/status", async (req, res) => {
   }
 
   try {
+    const [existingDeposit] = await db.select().from(depositsTable).where(eq(depositsTable.id, id)).limit(1);
+    if (!existingDeposit) {
+      res.status(404).json({ error: "Deposit not found." });
+      return;
+    }
+    const wasCompleted = existingDeposit.status === "completed";
+
     const [deposit] = await db
       .update(depositsTable)
       .set({ status: parsed.data.status })
@@ -205,6 +212,25 @@ router.patch("/admin/deposits/:id/status", async (req, res) => {
     if (!deposit) {
       res.status(404).json({ error: "Deposit not found." });
       return;
+    }
+
+    // Credit the investor's spendable cash balance the moment a deposit is
+    // marked completed, so they can immediately buy shares with it.
+    if (!wasCompleted && deposit.status === "completed") {
+      const [existingHolding] = await db
+        .select()
+        .from(holdingsTable)
+        .where(eq(holdingsTable.investorId, deposit.investorId))
+        .limit(1);
+      const newCashBalance = parseFloat(existingHolding?.cashBalance ?? "0") + parseFloat(deposit.amount);
+
+      await db
+        .insert(holdingsTable)
+        .values({ investorId: deposit.investorId, cashBalance: String(newCashBalance), updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: holdingsTable.investorId,
+          set: { cashBalance: String(newCashBalance), updatedAt: new Date() },
+        });
     }
 
     res.json({
@@ -313,6 +339,33 @@ router.put("/admin/deposit-addresses/:coin", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Failed to update deposit address");
+    res.status(500).json({ error: "Something went wrong." });
+  }
+});
+
+// PATCH /api/admin/site-config — update platform-wide toggles (e.g. selling)
+router.patch("/admin/site-config", async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+
+  const parsed = z.object({ sellingEnabled: z.boolean() }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input. Provide sellingEnabled." });
+    return;
+  }
+
+  try {
+    const [config] = await db
+      .insert(siteConfigTable)
+      .values({ id: 1, sellingEnabled: parsed.data.sellingEnabled, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: siteConfigTable.id,
+        set: { sellingEnabled: parsed.data.sellingEnabled, updatedAt: new Date() },
+      })
+      .returning();
+
+    res.json({ sellingEnabled: config.sellingEnabled });
+  } catch (err) {
+    req.log.error({ err }, "Failed to update site config");
     res.status(500).json({ error: "Something went wrong." });
   }
 });

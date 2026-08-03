@@ -1,1 +1,2 @@
 - [SPCX investor approval flow](spcx-approval-flow.md) — manual admin approval is the confirmed, intentional behavior; do not "fix" it back to auto-approve.
+- [SPCX Resend sandbox mode](spcx-resend-sandbox.md) — investor notification emails 403 to real addresses until a sending domain is verified; not a code bug.

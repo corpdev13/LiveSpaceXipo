@@ -6,10 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Holdings {
-  investorId: number;
-  shares: string;
-  avgCost: string;
-  cashBalance: string;
-  updatedAt: Date;
+export interface SellInput {
+  email: string;
+  /** @minimum 0.0001 */
+  shares: number;
 }

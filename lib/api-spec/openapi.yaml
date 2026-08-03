@@ -20,6 +20,10 @@ tags:
     description: Deposit operations
   - name: holdings
     description: User holdings
+  - name: trading
+    description: Investor buy/sell trading
+  - name: config
+    description: Public platform configuration
   - name: admin
     description: Admin operations
 paths:
@@ -163,6 +167,93 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /site-config:
+    get:
+      operationId: getSiteConfig
+      tags: [config]
+      summary: Get public platform configuration (e.g. whether selling is enabled)
+      responses:
+        "200":
+          description: Site configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteConfig"
+
+  /trade/buy:
+    post:
+      operationId: buyShares
+      tags: [trading]
+      summary: Buy SPCX shares using available cash balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuyInput"
+      responses:
+        "200":
+          description: Updated holdings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Holdings"
+        "400":
+          description: Invalid input or insufficient cash balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Investor not approved for trading
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /trade/sell:
+    post:
+      operationId: sellShares
+      tags: [trading]
+      summary: Sell SPCX shares (only permitted while the admin has selling enabled)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellInput"
+      responses:
+        "200":
+          description: Updated holdings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Holdings"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Selling disabled or investor not approved for trading
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /deposits:
     post:
       operationId: createDeposit
@@ -187,6 +278,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      operationId: listDeposits
+      tags: [deposits]
+      summary: List deposits for the current user (by email query param)
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User deposit history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DepositRecord"
         "404":
           description: Investor not found
           content:
@@ -339,6 +455,31 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DepositAddress"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/site-config:
+    patch:
+      operationId: updateSiteConfig
+      tags: [admin]
+      summary: Update platform configuration, e.g. enable/disable investor selling (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteConfigUpdate"
+      responses:
+        "200":
+          description: Updated site configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteConfig"
         "401":
           description: Unauthorized
           content:
@@ -511,6 +652,8 @@ components:
           type: string
         avgCost:
           type: string
+        cashBalance:
+          type: string
         updatedAt:
           type: string
           format: date-time
@@ -518,7 +661,48 @@ components:
         - investorId
         - shares
         - avgCost
+        - cashBalance
         - updatedAt
+
+    SiteConfig:
+      type: object
+      properties:
+        sellingEnabled:
+          type: boolean
+      required:
+        - sellingEnabled
+
+    SiteConfigUpdate:
+      type: object
+      properties:
+        sellingEnabled:
+          type: boolean
+      required:
+        - sellingEnabled
+
+    BuyInput:
+      type: object
+      properties:
+        email:
+          type: string
+        amountUsd:
+          type: number
+          minimum: 0.01
+      required:
+        - email
+        - amountUsd
+
+    SellInput:
+      type: object
+      properties:
+        email:
+          type: string
+        shares:
+          type: number
+          minimum: 0.0001
+      required:
+        - email
+        - shares
 
     CreateDepositInput:
       type: object

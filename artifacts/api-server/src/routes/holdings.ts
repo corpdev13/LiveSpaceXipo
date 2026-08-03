@@ -35,6 +35,7 @@ router.get("/holdings", async (req, res) => {
       investorId: investor.id,
       shares: "0",
       avgCost: "0",
+      cashBalance: "0",
       updatedAt: new Date(),
     };
 
@@ -42,6 +43,7 @@ router.get("/holdings", async (req, res) => {
       investorId: result.investorId,
       shares: result.shares,
       avgCost: result.avgCost,
+      cashBalance: result.cashBalance,
       updatedAt: result.updatedAt instanceof Date ? result.updatedAt.toISOString() : result.updatedAt,
     });
   } catch (err) {

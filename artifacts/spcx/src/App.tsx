@@ -10,6 +10,9 @@ import Dashboard from '@/pages/Dashboard';
 import Management from '@/pages/Management';
 import Support from '@/pages/Support';
 import Orders from '@/pages/Orders';
+import Trade from '@/pages/Trade';
+import Settings from '@/pages/Settings';
+import Updates from '@/pages/Updates';
 import Admin from '@/pages/Admin';
 import NotFound from '@/pages/not-found';
 
@@ -26,6 +29,9 @@ function Router() {
       <Route path="/management" component={Management} />
       <Route path="/support" component={Support} />
       <Route path="/orders" component={Orders} />
+      <Route path="/trade" component={Trade} />
+      <Route path="/settings" component={Settings} />
+      <Route path="/updates" component={Updates} />
       <Route component={NotFound} />
     </Switch>
   );

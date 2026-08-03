@@ -98,7 +98,28 @@ export interface Holdings {
   investorId: number;
   shares: string;
   avgCost: string;
+  cashBalance: string;
   updatedAt: string;
+}
+
+export interface SiteConfig {
+  sellingEnabled: boolean;
+}
+
+export interface SiteConfigUpdate {
+  sellingEnabled: boolean;
+}
+
+export interface BuyInput {
+  email: string;
+  /** @minimum 0.01 */
+  amountUsd: number;
+}
+
+export interface SellInput {
+  email: string;
+  /** @minimum 0.0001 */
+  shares: number;
 }
 
 export type CreateDepositInputMethod = typeof CreateDepositInputMethod[keyof typeof CreateDepositInputMethod];
@@ -246,6 +267,10 @@ export const GetStockHistoryPeriod = {
 } as const;
 
 export type GetHoldingsParams = {
+email: string;
+};
+
+export type ListDepositsParams = {
 email: string;
 };
 

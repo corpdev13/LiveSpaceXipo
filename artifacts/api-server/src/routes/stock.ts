@@ -1,16 +1,15 @@
 import { Router } from "express";
+import { getCurrentStockPrice, STOCK_BASE_PRICE } from "../lib/stock";
 
 const router = Router();
 
-const BASE_PRICE = 147.62;
+const BASE_PRICE = STOCK_BASE_PRICE;
 const CHANGE = -1.86;
 const CHANGE_PCT = -1.24;
 
 // GET /api/stock/quote — current SPCX quote
 router.get("/stock/quote", (_req, res) => {
-  // Simulate slight live variation
-  const noise = (Math.random() - 0.5) * 0.2;
-  const price = Math.round((BASE_PRICE + noise) * 100) / 100;
+  const price = getCurrentStockPrice();
 
   res.json({
     symbol: "SPCX",
