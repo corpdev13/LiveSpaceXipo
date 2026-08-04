@@ -24,6 +24,10 @@ tags:
     description: Investor buy/sell trading
   - name: config
     description: Public platform configuration
+  - name: notifications
+    description: Broker notifications sent to investors
+  - name: assistant
+    description: AI investment assistant chat
   - name: admin
     description: Admin operations
 paths:
@@ -462,6 +466,128 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List broker notifications for the current user (by email query param)
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /notifications/read:
+    patch:
+      operationId: markNotificationsRead
+      tags: [notifications]
+      summary: Mark all of the current user's notifications as read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkNotificationsReadInput"
+      responses:
+        "200":
+          description: Updated notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /assistant/chat:
+    post:
+      operationId: chatWithAssistant
+      tags: [assistant]
+      summary: Send a message to the AI investment assistant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantChatInput"
+      responses:
+        "200":
+          description: Assistant reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantChatResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Assistant failed to respond
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/notifications:
+    post:
+      operationId: sendAdminNotification
+      tags: [admin]
+      summary: Send a broker notification to an investor by email (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendNotificationInput"
+      responses:
+        "201":
+          description: Notification sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /admin/site-config:
     patch:
       operationId: updateSiteConfig
@@ -663,6 +789,80 @@ components:
         - avgCost
         - cashBalance
         - updatedAt
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        investorId:
+          type: integer
+        message:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - investorId
+        - message
+        - read
+        - createdAt
+
+    MarkNotificationsReadInput:
+      type: object
+      properties:
+        email:
+          type: string
+      required:
+        - email
+
+    SendNotificationInput:
+      type: object
+      properties:
+        email:
+          type: string
+        message:
+          type: string
+          minLength: 1
+      required:
+        - email
+        - message
+
+    AssistantChatMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+      required:
+        - role
+        - content
+
+    AssistantChatInput:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantChatMessage"
+      required:
+        - messages
+
+    AssistantChatResponse:
+      type: object
+      properties:
+        reply:
+          type: string
+        showOrderButton:
+          type: boolean
+      required:
+        - reply
+        - showOrderButton
 
     SiteConfig:
       type: object

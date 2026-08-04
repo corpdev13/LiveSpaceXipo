@@ -102,6 +102,46 @@ export interface Holdings {
   updatedAt: string;
 }
 
+export interface Notification {
+  id: number;
+  investorId: number;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface MarkNotificationsReadInput {
+  email: string;
+}
+
+export interface SendNotificationInput {
+  email: string;
+  /** @minLength 1 */
+  message: string;
+}
+
+export type AssistantChatMessageRole = typeof AssistantChatMessageRole[keyof typeof AssistantChatMessageRole];
+
+
+export const AssistantChatMessageRole = {
+  user: 'user',
+  assistant: 'assistant',
+} as const;
+
+export interface AssistantChatMessage {
+  role: AssistantChatMessageRole;
+  content: string;
+}
+
+export interface AssistantChatInput {
+  messages: AssistantChatMessage[];
+}
+
+export interface AssistantChatResponse {
+  reply: string;
+  showOrderButton: boolean;
+}
+
 export interface SiteConfig {
   sellingEnabled: boolean;
 }
@@ -271,6 +311,10 @@ email: string;
 };
 
 export type ListDepositsParams = {
+email: string;
+};
+
+export type ListNotificationsParams = {
 email: string;
 };
 

@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './assistantChatInput';
+export * from './assistantChatMessage';
+export * from './assistantChatMessageRole';
+export * from './assistantChatResponse';
 export * from './buyInput';
 export * from './createDepositInput';
 export * from './createDepositInputCoin';
@@ -33,7 +37,11 @@ export * from './investorStatus';
 export * from './investorStatusInput';
 export * from './investorStatusInputStatus';
 export * from './listDepositsParams';
+export * from './listNotificationsParams';
+export * from './markNotificationsReadInput';
+export * from './notification';
 export * from './sellInput';
+export * from './sendNotificationInput';
 export * from './signInInput';
 export * from './signInResult';
 export * from './signInResultStatus';

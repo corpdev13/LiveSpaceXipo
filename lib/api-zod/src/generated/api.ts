@@ -311,6 +311,76 @@ export const AdminGetDepositAddressesResponse = zod.array(AdminGetDepositAddress
 
 
 /**
+ * @summary List broker notifications for the current user (by email query param)
+ */
+export const ListNotificationsQueryParams = zod.object({
+  "email": zod.coerce.string()
+})
+
+export const ListNotificationsResponseItem = zod.object({
+  "id": zod.number(),
+  "investorId": zod.number(),
+  "message": zod.string(),
+  "read": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const ListNotificationsResponse = zod.array(ListNotificationsResponseItem)
+
+
+/**
+ * @summary Mark all of the current user's notifications as read
+ */
+export const MarkNotificationsReadBody = zod.object({
+  "email": zod.string()
+})
+
+export const MarkNotificationsReadResponseItem = zod.object({
+  "id": zod.number(),
+  "investorId": zod.number(),
+  "message": zod.string(),
+  "read": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const MarkNotificationsReadResponse = zod.array(MarkNotificationsReadResponseItem)
+
+
+/**
+ * @summary Send a message to the AI investment assistant
+ */
+export const ChatWithAssistantBody = zod.object({
+  "messages": zod.array(zod.object({
+  "role": zod.enum(['user', 'assistant']),
+  "content": zod.string()
+}))
+})
+
+export const ChatWithAssistantResponse = zod.object({
+  "reply": zod.string(),
+  "showOrderButton": zod.boolean()
+})
+
+
+/**
+ * @summary Send a broker notification to an investor by email (admin only)
+ */
+
+
+
+export const SendAdminNotificationBody = zod.object({
+  "email": zod.string(),
+  "message": zod.string().min(1)
+})
+
+export const SendAdminNotificationResponse = zod.object({
+  "id": zod.number(),
+  "investorId": zod.number(),
+  "message": zod.string(),
+  "read": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
  * @summary Update platform configuration, e.g. enable/disable investor selling (admin only)
  */
 export const UpdateSiteConfigBody = zod.object({
