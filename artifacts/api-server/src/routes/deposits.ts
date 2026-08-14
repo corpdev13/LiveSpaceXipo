@@ -21,6 +21,11 @@ router.post("/deposits", async (req, res) => {
   }
   const { email, amount, method, coin } = parsed.data;
 
+  if (method === "card") {
+    res.status(400).json({ error: "Card payments are not available at the moment. Kindly use Crypto Payment." });
+    return;
+  }
+
   try {
     const [investor] = await db
       .select()

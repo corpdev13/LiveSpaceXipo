@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Menu, Bell, User, Mail, ShieldCheck, LogOut } from 'lucide-react';
+import { Menu, User, Mail, ShieldCheck, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import SideNav from '../components/SideNav';
+import NotificationBell from '../components/NotificationBell';
 
 const PREFS_KEY = 'spcx_notification_prefs';
 
@@ -54,9 +55,7 @@ export default function Settings() {
         <button onClick={() => setMenuOpen(true)} className="text-white/70 hover:text-white transition-colors cursor-pointer">
           <Menu className="w-6 h-6" />
         </button>
-        <button className="text-white/70 hover:text-white transition-colors cursor-pointer">
-          <Bell className="w-6 h-6" />
-        </button>
+        <NotificationBell />
       </header>
 
       <main className="flex-1 px-6 py-8 max-w-2xl mx-auto w-full">

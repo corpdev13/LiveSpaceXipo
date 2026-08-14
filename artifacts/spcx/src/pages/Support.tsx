@@ -1,13 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { Menu, Bell, Paperclip, Send } from 'lucide-react';
+import { Menu, Paperclip, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
+import { useChatWithAssistant } from '@workspace/api-client-react';
 import SideNav from '../components/SideNav';
+import NotificationBell from '../components/NotificationBell';
+
+type ChatMessage = {
+  id: number;
+  text: string;
+  sender: 'bot' | 'user';
+  time: string;
+  showOrderButton?: boolean;
+};
 
 export default function Support() {
   const [, setLocation] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [input, setInput] = useState('');
+  const chatMutation = useChatWithAssistant();
 
   const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('spcx_user') || 'null') : null;
 
@@ -20,7 +32,7 @@ export default function Support() {
     setLocation('/');
   };
 
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<ChatMessage[]>([
     { id: 1, text: "Hi there! Thanks for reaching out to SPCX Support. How can we assist you today?", sender: 'bot', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
   ]);
 
@@ -33,25 +45,44 @@ export default function Support() {
   const handleSend = (text: string) => {
     if (!text.trim()) return;
 
-    const newUserMsg = {
+    const newUserMsg: ChatMessage = {
       id: Date.now(),
       text,
       sender: 'user',
       time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
     };
 
-    setMessages(prev => [...prev, newUserMsg]);
+    const conversation = [...messages, newUserMsg];
+    setMessages(conversation);
     setInput('');
 
-    setTimeout(() => {
-      const newBotMsg = {
-        id: Date.now() + 1,
-        text: "Thank you! An SPCX specialist will be with you shortly.",
-        sender: 'bot',
-        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-      };
-      setMessages(prev => [...prev, newBotMsg]);
-    }, 1000);
+    chatMutation.mutate(
+      {
+        data: {
+          messages: conversation.map((message) => ({
+            role: message.sender === 'user' ? 'user' as const : 'assistant' as const,
+            content: message.text,
+          })),
+        },
+      },
+      {
+        onSuccess: (response) => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now() + 1,
+              text: response.reply,
+              sender: 'bot',
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              showOrderButton: response.showOrderButton,
+            },
+          ]);
+        },
+        onError: (error: any) => {
+          toast.error(error?.data?.error || 'The assistant is unavailable right now.');
+        },
+      },
+    );
   };
 
   return (
@@ -62,9 +93,7 @@ export default function Support() {
         <button onClick={() => setMenuOpen(true)} className="text-white/70 hover:text-white transition-colors cursor-pointer">
           <Menu className="w-6 h-6" />
         </button>
-        <button className="text-white/70 hover:text-white transition-colors cursor-pointer">
-          <Bell className="w-6 h-6" />
-        </button>
+        <NotificationBell />
       </header>
 
       <main className="flex-1 flex flex-col max-w-2xl mx-auto w-full overflow-hidden">
@@ -100,6 +129,14 @@ export default function Support() {
                 >
                   <div className={`px-4 py-3 rounded-2xl max-w-[85%] ${msg.sender === 'user' ? 'bg-[#1a8a4a] text-white rounded-br-sm' : 'bg-[#111827] border border-white/5 text-white/90 rounded-bl-sm'}`}>
                     <p className="text-sm leading-relaxed">{msg.text}</p>
+                    {msg.showOrderButton && (
+                      <button
+                        onClick={() => setLocation('/orders')}
+                        className="mt-4 w-full bg-white text-black px-4 py-2.5 font-display font-bold text-xs tracking-widest uppercase hover:bg-white/90 transition-colors cursor-pointer"
+                      >
+                        Fund Account / View Options
+                      </button>
+                    )}
                   </div>
                   <span className="text-[10px] text-white/30 mt-1 font-display tracking-wider">{msg.time}</span>
                 </motion.div>
@@ -111,7 +148,7 @@ export default function Support() {
 
         <div className="shrink-0 p-6 pt-2">
           <div className="flex flex-wrap gap-2 mb-4">
-            {['Account', 'Orders', 'Payments'].map(pill => (
+            {['Why buy SPCX now?', 'How do I pay?', 'What are the risks?'].map(pill => (
               <button
                 key={pill}
                 onClick={() => handleSend(pill)}
@@ -136,10 +173,10 @@ export default function Support() {
             />
             <button
               onClick={() => handleSend(input)}
-              disabled={!input.trim()}
+              disabled={!input.trim() || chatMutation.isPending}
               className="w-10 h-10 rounded-full bg-[#1a8a4a] hover:bg-[#1a9a52] disabled:bg-white/10 disabled:text-white/30 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <Send className="w-4 h-4 ml-0.5" />
+              {chatMutation.isPending ? <span className="text-xs font-display">...</span> : <Send className="w-4 h-4 ml-0.5" />}
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { db, investorsTable, holdingsTable, depositsTable, depositAddressesTable, siteConfigTable } from "@workspace/db";
+import { db, investorsTable, holdingsTable, depositsTable, depositAddressesTable, siteConfigTable, notificationsTable } from "@workspace/db";
+import { SendAdminNotificationBody } from "@workspace/api-zod";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { sendInvestorStatusEmail } from "../lib/email";
@@ -366,6 +367,42 @@ router.patch("/admin/site-config", async (req, res) => {
     res.json({ sellingEnabled: config.sellingEnabled });
   } catch (err) {
     req.log.error({ err }, "Failed to update site config");
+    res.status(500).json({ error: "Something went wrong." });
+  }
+});
+
+// POST /api/admin/notifications — send a broker message to one investor
+router.post("/admin/notifications", async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+
+  const parsed = SendAdminNotificationBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Provide a valid investor email and message." });
+    return;
+  }
+
+  try {
+    const email = parsed.data.email.toLowerCase().trim();
+    const [investor] = await db.select().from(investorsTable).where(eq(investorsTable.email, email)).limit(1);
+    if (!investor) {
+      res.status(404).json({ error: "Investor not found." });
+      return;
+    }
+
+    const [notification] = await db
+      .insert(notificationsTable)
+      .values({ investorId: investor.id, message: parsed.data.message.trim() })
+      .returning();
+
+    res.status(201).json({
+      id: notification.id,
+      investorId: notification.investorId,
+      message: notification.message,
+      read: notification.read,
+      createdAt: notification.createdAt.toISOString(),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to send admin notification");
     res.status(500).json({ error: "Something went wrong." });
   }
 });

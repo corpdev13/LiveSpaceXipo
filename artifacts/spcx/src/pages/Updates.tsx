@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Menu, Bell, CheckCircle2, Clock, XCircle, DollarSign } from 'lucide-react';
+import { Menu, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useListDeposits, getListDepositsQueryKey } from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useListDeposits,
+  getListDepositsQueryKey,
+  useListNotifications,
+  getListNotificationsQueryKey,
+  useMarkNotificationsRead,
+} from '@workspace/api-client-react';
 import SideNav from '../components/SideNav';
+import NotificationBell from '../components/NotificationBell';
 
 export default function Updates() {
   const [, setLocation] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('spcx_user') || 'null') : null;
   const email: string = user?.email ?? '';
@@ -17,6 +26,24 @@ export default function Updates() {
   }, [user, setLocation]);
 
   const { data: deposits, isLoading } = useListDeposits({ email }, { query: { enabled: !!email, queryKey: getListDepositsQueryKey({ email }) } });
+  const { data: notifications, isLoading: notificationsLoading } = useListNotifications(
+    { email },
+    { query: { enabled: !!email, queryKey: getListNotificationsQueryKey({ email }) } },
+  );
+  const markNotificationsRead = useMarkNotificationsRead();
+
+  useEffect(() => {
+    if (!notificationsLoading && notifications?.some((notification) => !notification.read)) {
+      markNotificationsRead.mutate(
+        { data: { email } },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getListNotificationsQueryKey({ email }) });
+          },
+        },
+      );
+    }
+  }, [email, notificationsLoading, notifications, markNotificationsRead, queryClient]);
 
   const handleSignOut = () => {
     localStorage.removeItem('spcx_user');
@@ -60,9 +87,7 @@ export default function Updates() {
         <button onClick={() => setMenuOpen(true)} className="text-white/70 hover:text-white transition-colors cursor-pointer">
           <Menu className="w-6 h-6" />
         </button>
-        <button className="text-white/70 hover:text-white transition-colors cursor-pointer">
-          <Bell className="w-6 h-6" />
-        </button>
+        <NotificationBell />
       </header>
 
       <main className="flex-1 px-6 py-8 max-w-2xl mx-auto w-full">
@@ -75,6 +100,24 @@ export default function Updates() {
 
         {!isLoading && (
           <div className="flex flex-col gap-3">
+            {notifications?.map((notification, i) => (
+              <motion.div
+                key={`notification-${notification.id}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+                className="border border-red-500/30 bg-red-500/5 p-5"
+              >
+                <div className="flex items-center justify-between gap-4 mb-3">
+                  <div className="text-xs text-red-400 font-display font-bold tracking-widest uppercase">Message from Broker Team</div>
+                  <div className="text-xs text-white/30 font-display tracking-wider shrink-0">
+                    {new Date(notification.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
+                </div>
+                <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap">{notification.message}</p>
+              </motion.div>
+            ))}
+
             {items.map((item, i) => (
               <motion.div
                 key={item.id}

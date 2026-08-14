@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { Menu, Bell } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useGetStockQuote, useGetStockHistory, GetStockHistoryPeriod, getGetStockQuoteQueryKey, getGetStockHistoryQueryKey, useGetHoldings, getGetHoldingsQueryKey } from '@workspace/api-client-react';
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
 import SideNav from '../components/SideNav';
+import NotificationBell from '../components/NotificationBell';
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -51,9 +52,7 @@ export default function Dashboard() {
         <button onClick={() => setMenuOpen(true)} className="text-white/70 hover:text-white transition-colors cursor-pointer">
           <Menu className="w-6 h-6" />
         </button>
-        <button className="text-white/70 hover:text-white transition-colors cursor-pointer">
-          <Bell className="w-6 h-6" />
-        </button>
+        <NotificationBell />
       </header>
 
       <main className="flex-1 px-6 py-8 max-w-4xl mx-auto w-full">

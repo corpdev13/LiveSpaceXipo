@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, investorsTable, notificationsTable } from "@workspace/db";
-import { MarkNotificationsReadInput } from "@workspace/api-zod";
+import { MarkNotificationsReadBody } from "@workspace/api-zod";
 import { eq, desc, and } from "drizzle-orm";
 
 const router = Router();
@@ -45,7 +45,7 @@ router.get("/notifications", async (req, res) => {
 
 // PATCH /api/notifications/read — mark all of the current user's notifications as read
 router.patch("/notifications/read", async (req, res) => {
-  const parsed = MarkNotificationsReadInput.safeParse(req.body);
+  const parsed = MarkNotificationsReadBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Email is required." });
     return;

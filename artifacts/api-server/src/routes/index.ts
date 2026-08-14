@@ -7,6 +7,8 @@ import adminRouter from "./admin";
 import depositsRouter from "./deposits";
 import holdingsRouter from "./holdings";
 import tradeRouter from "./trade";
+import notificationsRouter from "./notifications";
+import assistantRouter from "./assistant";
 
 const router: IRouter = Router();
 
@@ -18,5 +20,7 @@ router.use(adminRouter);
 router.use(depositsRouter);
 router.use(holdingsRouter);
 router.use(tradeRouter);
+router.use(notificationsRouter);
+router.use(assistantRouter);
 
 export default router;

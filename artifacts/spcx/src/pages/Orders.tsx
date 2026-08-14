@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Menu, Bell, ArrowLeft, Copy, Check, CreditCard, Bitcoin } from 'lucide-react';
+import { Menu, ArrowLeft, Copy, Check, CreditCard, Bitcoin, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useCreateDeposit, useGetDepositAddresses } from '@workspace/api-client-react';
 import SideNav from '../components/SideNav';
+import NotificationBell from '../components/NotificationBell';
 
 type Step = 'amount' | 'method' | 'card' | 'crypto' | 'success';
 
@@ -15,7 +16,6 @@ export default function Orders() {
   const [amount, setAmount] = useState('');
   const [selectedCoin, setSelectedCoin] = useState<'BTC' | 'ETH' | 'DOGE'>('BTC');
   const [copied, setCopied] = useState(false);
-  const [cardForm, setCardForm] = useState({ number: '', expiry: '', cvc: '', name: '' });
 
   const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('spcx_user') || 'null') : null;
   const email: string = user?.email ?? '';
@@ -39,13 +39,6 @@ export default function Orders() {
       return;
     }
     setStep('method');
-  };
-
-  const handleCardSubmit = () => {
-    createDeposit.mutate({ data: { email, amount: parseFloat(amount), method: 'card' } }, {
-      onSuccess: () => setStep('success'),
-      onError: () => toast.error('Failed to submit deposit. Please try again.'),
-    });
   };
 
   const handleCryptoConfirm = () => {
@@ -86,9 +79,7 @@ export default function Orders() {
             <ArrowLeft className="w-6 h-6" />
           </button>
         )}
-        <button className="text-white/70 hover:text-white transition-colors cursor-pointer">
-          <Bell className="w-6 h-6" />
-        </button>
+        <NotificationBell />
       </header>
 
       <main className="flex-1 px-6 py-10 max-w-md mx-auto w-full flex flex-col">
@@ -133,10 +124,10 @@ export default function Orders() {
 
               <div className="flex flex-col gap-4">
                 <button onClick={() => setStep('card')} className="flex items-center gap-4 p-5 border border-white/10 hover:border-white/40 hover:bg-white/5 transition-colors text-left cursor-pointer">
-                  <CreditCard className="w-6 h-6 text-white/70" />
+                  <CreditCard className="w-6 h-6 text-red-400/80" />
                   <div>
                     <div className="font-display font-bold tracking-widest uppercase">Debit / Credit Card</div>
-                    <div className="text-xs text-white/40 tracking-wider">Instant processing</div>
+                    <div className="text-xs text-red-400 tracking-wider">Not available at the moment · Kindly use Crypto Payment</div>
                   </div>
                 </button>
                 <button onClick={() => setStep('crypto')} className="flex items-center gap-4 p-5 border border-white/10 hover:border-white/40 hover:bg-white/5 transition-colors text-left cursor-pointer">
@@ -152,24 +143,16 @@ export default function Orders() {
 
           {step === 'card' && (
             <motion.div key="card" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
-              <h1 className="text-3xl font-bold font-display uppercase tracking-widest mb-2">Card Details</h1>
-              <p className="text-sm text-white/50 tracking-wider font-display uppercase mb-10">${parseFloat(amount || '0').toLocaleString()} via card</p>
-
-              <div className="space-y-5">
-                <input type="text" placeholder="CARDHOLDER NAME" value={cardForm.name} onChange={e => setCardForm({ ...cardForm, name: e.target.value })}
-                  className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-5 py-4 focus:outline-none focus:border-white/80 transition-all font-display tracking-widest uppercase" />
-                <input type="text" placeholder="CARD NUMBER" value={cardForm.number} onChange={e => setCardForm({ ...cardForm, number: e.target.value })}
-                  className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-5 py-4 focus:outline-none focus:border-white/80 transition-all font-display tracking-widest uppercase" />
-                <div className="flex gap-4">
-                  <input type="text" placeholder="MM/YY" value={cardForm.expiry} onChange={e => setCardForm({ ...cardForm, expiry: e.target.value })}
-                    className="w-1/2 bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-5 py-4 focus:outline-none focus:border-white/80 transition-all font-display tracking-widest uppercase" />
-                  <input type="text" placeholder="CVC" value={cardForm.cvc} onChange={e => setCardForm({ ...cardForm, cvc: e.target.value })}
-                    className="w-1/2 bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-5 py-4 focus:outline-none focus:border-white/80 transition-all font-display tracking-widest uppercase" />
-                </div>
+              <div className="border border-red-500/40 bg-red-500/5 p-6 text-center">
+                <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-4" />
+                <h1 className="text-2xl font-bold font-display uppercase tracking-widest mb-3">Card Payment Unavailable</h1>
+                <p className="text-sm text-red-300/90 leading-relaxed">
+                  Card payments are not available at the moment. Kindly use Crypto Payment.
+                </p>
               </div>
 
-              <button onClick={handleCardSubmit} disabled={createDeposit.isPending} className="w-full bg-white text-black font-display font-bold text-lg tracking-widest uppercase py-4 mt-10 hover:bg-white/90 disabled:opacity-50 transition-colors cursor-pointer">
-                {createDeposit.isPending ? 'Processing...' : `Deposit $${parseFloat(amount || '0').toLocaleString()}`}
+              <button onClick={() => setStep('crypto')} className="w-full bg-white text-black font-display font-bold text-lg tracking-widest uppercase py-4 mt-10 hover:bg-white/90 transition-colors cursor-pointer">
+                Use Crypto Payment
               </button>
             </motion.div>
           )}

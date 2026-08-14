@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Menu, Bell, ArrowLeft } from 'lucide-react';
+import { Menu, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ import {
   useSellShares,
 } from '@workspace/api-client-react';
 import SideNav from '../components/SideNav';
+import NotificationBell from '../components/NotificationBell';
 
 type Mode = 'buy' | 'sell';
 
@@ -105,9 +106,7 @@ export default function Trade() {
         <button onClick={() => setMenuOpen(true)} className="text-white/70 hover:text-white transition-colors cursor-pointer">
           <Menu className="w-6 h-6" />
         </button>
-        <button className="text-white/70 hover:text-white transition-colors cursor-pointer">
-          <Bell className="w-6 h-6" />
-        </button>
+        <NotificationBell />
       </header>
 
       <main className="flex-1 px-6 py-8 max-w-md mx-auto w-full">

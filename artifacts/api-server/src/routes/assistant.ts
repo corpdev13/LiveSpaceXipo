@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { AssistantChatInput } from "@workspace/api-zod";
+import { ChatWithAssistantBody } from "@workspace/api-zod";
 import { groq, GROQ_CHAT_MODEL } from "../lib/groq";
 
 const router = Router();
@@ -17,7 +17,7 @@ Keep replies concise: 2-4 short sentences, conversational tone, no markdown head
 
 // POST /api/assistant/chat — chat with the AI investment assistant
 router.post("/assistant/chat", async (req, res) => {
-  const parsed = AssistantChatInput.safeParse(req.body);
+  const parsed = ChatWithAssistantBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input. Provide a messages array." });
     return;

@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Lock, Check, X, DollarSign, Wallet, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useSendAdminNotification } from '@workspace/api-client-react';
 
 type Investor = { id: number; fullName: string; email: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; shares: string; avgCost: string };
 type Deposit = { id: number; investorId: number; fullName: string; email: string; amount: string; method: 'card' | 'crypto'; coin: string | null; status: 'pending' | 'completed' | 'failed'; createdAt: string };
 type DepositAddress = { coin: string; address: string; updatedAt: string };
 
-const TABS = ['Investors', 'Deposits', 'Credit User', 'Deposit Addresses', 'Trading'] as const;
+const TABS = ['Investors', 'Deposits', 'Credit User', 'Notify User', 'Deposit Addresses', 'Trading'] as const;
 type Tab = typeof TABS[number];
 
 async function adminFetch(path: string, password: string, options: RequestInit = {}) {
@@ -44,6 +45,9 @@ export default function Admin() {
   const [addressEdits, setAddressEdits] = useState<Record<string, string>>({});
   const [sellingEnabled, setSellingEnabled] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
+  const [notificationEmail, setNotificationEmail] = useState('');
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const sendNotification = useSendAdminNotification();
 
   const loadInvestors = async (pw: string) => {
     const data = await adminFetch('/admin/investors', pw);
@@ -85,7 +89,7 @@ export default function Admin() {
   useEffect(() => {
     if (!authed) return;
     setLoading(true);
-    const load = tab === 'Investors' || tab === 'Credit User' ? loadInvestors
+    const load = tab === 'Investors' || tab === 'Credit User' || tab === 'Notify User' ? loadInvestors
       : tab === 'Deposits' ? loadDeposits
       : tab === 'Trading' ? loadSiteConfig
       : loadAddresses;
@@ -159,6 +163,25 @@ export default function Admin() {
     } catch (err: any) {
       toast.error(err.message);
     }
+  };
+
+  const handleSendNotification = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!notificationEmail || !notificationMessage.trim()) {
+      toast.error('Enter an investor email and message.');
+      return;
+    }
+
+    sendNotification.mutate(
+      { data: { email: notificationEmail, message: notificationMessage.trim() } },
+      {
+        onSuccess: () => {
+          toast.success('Message sent to the investor.');
+          setNotificationMessage('');
+        },
+        onError: (err: any) => toast.error(err?.data?.error || 'Failed to send message.'),
+      },
+    );
   };
 
   if (!authed) {
@@ -286,6 +309,40 @@ export default function Admin() {
             </div>
             <button type="submit" className="w-full bg-white text-black font-display font-bold text-lg tracking-widest uppercase py-4 hover:bg-white/90 transition-colors cursor-pointer">
               Credit Shares
+            </button>
+          </form>
+        )}
+
+        {!loading && tab === 'Notify User' && (
+          <form onSubmit={handleSendNotification} className="max-w-lg space-y-5">
+            <div>
+              <label className="block text-xs text-white/40 font-display tracking-widest uppercase mb-2">Investor Email</label>
+              <input
+                type="email"
+                value={notificationEmail}
+                onChange={(e) => setNotificationEmail(e.target.value)}
+                placeholder="INVESTOR EMAIL ADDRESS"
+                className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/30 px-5 py-4 focus:outline-none focus:border-white/80 font-display tracking-wider"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-white/40 font-display tracking-widest uppercase mb-2">Message</label>
+              <textarea
+                value={notificationMessage}
+                onChange={(e) => setNotificationMessage(e.target.value)}
+                placeholder="Write the message for this investor..."
+                rows={7}
+                maxLength={2000}
+                className="w-full resize-y bg-black/50 border border-white/30 text-white placeholder:text-white/30 px-5 py-4 focus:outline-none focus:border-white/80 font-display tracking-wider"
+              />
+              <div className="text-right text-xs text-white/30 mt-1">{notificationMessage.length}/2000</div>
+            </div>
+            <button
+              type="submit"
+              disabled={sendNotification.isPending}
+              className="w-full bg-white text-black font-display font-bold text-lg tracking-widest uppercase py-4 hover:bg-white/90 disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              {sendNotification.isPending ? 'Sending...' : 'Send Message'}
             </button>
           </form>
         )}
