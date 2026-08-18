@@ -2,10 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Menu } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useGetStockQuote, useGetStockHistory, GetStockHistoryPeriod, getGetStockQuoteQueryKey, getGetStockHistoryQueryKey, useGetHoldings, getGetHoldingsQueryKey } from '@workspace/api-client-react';
+import {
+  useGetStockQuote,
+  useGetStockHistory,
+  GetStockHistoryPeriod,
+  getGetStockQuoteQueryKey,
+  getGetStockHistoryQueryKey,
+  useGetHoldings,
+  getGetHoldingsQueryKey,
+  useListDeposits,
+  getListDepositsQueryKey,
+  useListNotifications,
+  getListNotificationsQueryKey,
+} from '@workspace/api-client-react';
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
 import SideNav from '../components/SideNav';
 import NotificationBell from '../components/NotificationBell';
+import { ArrowDownRight, ArrowUpRight, Bell, Clock3, Wallet, TrendingUp } from 'lucide-react';
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -23,6 +36,8 @@ export default function Dashboard() {
   const { data: quote } = useGetStockQuote({ query: { refetchInterval: 30000, queryKey: getGetStockQuoteQueryKey() } });
   const { data: history } = useGetStockHistory({ period: activePeriod }, { query: { refetchInterval: 30000, queryKey: getGetStockHistoryQueryKey({ period: activePeriod }) } });
   const { data: holdings } = useGetHoldings({ email }, { query: { enabled: !!email, queryKey: getGetHoldingsQueryKey({ email }) } });
+  const { data: deposits } = useListDeposits({ email }, { query: { enabled: !!email, queryKey: getListDepositsQueryKey({ email }) } });
+  const { data: notifications } = useListNotifications({ email }, { query: { enabled: !!email, queryKey: getListNotificationsQueryKey({ email }) } });
 
   const handleSignOut = () => {
     localStorage.removeItem('spcx_user');
@@ -44,6 +59,14 @@ export default function Dashboard() {
   const shares = parseFloat(holdings?.shares ?? '0');
   const currentPrice = quote?.price ?? 147.62;
   const marketValue = (shares * currentPrice).toFixed(2);
+  const cashBalance = parseFloat(holdings?.cashBalance ?? '0');
+  const avgCost = parseFloat(holdings?.avgCost ?? '0');
+  const investedCost = shares * avgCost;
+  const profitLoss = shares * (currentPrice - avgCost);
+  const totalPortfolioValue = parseFloat(marketValue) + cashBalance;
+  const returnPercent = investedCost > 0 ? (profitLoss / investedCost) * 100 : 0;
+  const unreadNotifications = notifications?.filter((notification) => !notification.read).slice(0, 3) ?? [];
+  const recentDeposits = deposits?.slice(0, 4) ?? [];
 
   return (
     <div className="min-h-[100dvh] bg-[#050a0f] text-white selection:bg-white/20 flex flex-col">
@@ -102,6 +125,78 @@ export default function Dashboard() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.4 }}>
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <h2 className="text-xl font-bold font-display uppercase tracking-widest">Portfolio Overview</h2>
+            <span className="text-xs text-white/30 font-display tracking-widest uppercase">Live estimate</span>
+          </div>
+
+          <div className="bg-[#0a0f14] border border-white/5 p-6 mb-4">
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <div>
+                <div className="text-xs text-white/50 font-display tracking-widest uppercase mb-2">Total Portfolio Value</div>
+                <div className="text-4xl font-bold font-display tracking-tight">${totalPortfolioValue.toFixed(2)}</div>
+              </div>
+              <div className={`flex items-center gap-2 font-display font-bold tracking-wider ${profitLoss >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {profitLoss >= 0 ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
+                <span>{profitLoss >= 0 ? '+' : '-'}${Math.abs(profitLoss).toFixed(2)} ({Math.abs(returnPercent).toFixed(2)}%)</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+              {[
+                { label: 'Shares', value: shares.toFixed(4) },
+                { label: 'Share Value', value: `$${parseFloat(marketValue).toFixed(2)}` },
+                { label: 'Cash', value: `$${cashBalance.toFixed(2)}` },
+                { label: 'Avg Cost', value: `$${avgCost.toFixed(2)}` },
+              ].map((stat) => (
+                <div key={stat.label} className="border border-white/5 bg-black/20 p-3">
+                  <div className="text-[10px] text-white/40 font-display tracking-widest uppercase mb-1">{stat.label}</div>
+                  <div className="text-base font-bold font-display tracking-wider">{stat.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-12">
+            {[
+              { label: 'Buy Shares', icon: TrendingUp, path: '/trade', style: 'bg-[#1a8a4a] hover:bg-[#1a9a52]' },
+              { label: 'Deposit Crypto', icon: Wallet, path: '/orders', style: 'border border-white/20 hover:border-white/40' },
+              { label: 'Updates', icon: Bell, path: '/updates', style: 'border border-white/20 hover:border-white/40' },
+              { label: 'Activity', icon: Clock3, path: '/updates', style: 'border border-white/20 hover:border-white/40' },
+            ].map((action) => (
+              <button
+                key={action.label}
+                onClick={() => setLocation(action.path)}
+                className={`flex flex-col items-center justify-center gap-2 min-h-20 px-3 py-3 text-white font-display font-bold text-xs tracking-widest uppercase transition-colors cursor-pointer ${action.style}`}
+              >
+                <action.icon className="w-5 h-5" />
+                {action.label}
+              </button>
+            ))}
+          </div>
+
+          {unreadNotifications.length > 0 && (
+            <div className="mb-12">
+              <div className="flex items-center justify-between gap-4 mb-5">
+                <h2 className="text-xl font-bold font-display uppercase tracking-widest text-red-400">Broker Notices</h2>
+                <button onClick={() => setLocation('/updates')} className="text-xs text-white/40 hover:text-white font-display tracking-widest uppercase underline underline-offset-4 cursor-pointer">
+                  View all
+                </button>
+              </div>
+              <div className="space-y-3">
+                {unreadNotifications.map((notification) => (
+                  <button
+                    key={notification.id}
+                    onClick={() => setLocation('/updates')}
+                    className="w-full text-left border border-red-500/30 bg-red-500/5 p-4 hover:bg-red-500/10 transition-colors cursor-pointer"
+                  >
+                    <div className="text-xs text-red-400 font-display font-bold tracking-widest uppercase mb-2">Message from Broker Team</div>
+                    <p className="text-sm text-white/75 leading-relaxed line-clamp-2">{notification.message}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <h2 className="text-xl font-bold font-display uppercase tracking-widest mb-6">Key Market Stats</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[
@@ -151,6 +246,41 @@ export default function Dashboard() {
                 Trade
               </button>
             </div>
+          </div>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.9 }} className="mt-12">
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <h2 className="text-xl font-bold font-display uppercase tracking-widest">Recent Activity</h2>
+            <button onClick={() => setLocation('/updates')} className="text-xs text-white/40 hover:text-white font-display tracking-widest uppercase underline underline-offset-4 cursor-pointer">
+              View all
+            </button>
+          </div>
+          <div className="border border-white/5 divide-y divide-white/5">
+            {recentDeposits.length === 0 && (
+              <div className="p-5 text-sm text-white/40 font-display tracking-wider">No deposit activity yet.</div>
+            )}
+            {recentDeposits.map((deposit) => (
+              <div key={deposit.id} className="flex items-center justify-between gap-4 p-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-9 h-9 flex items-center justify-center shrink-0 ${deposit.status === 'completed' ? 'bg-green-500/10 text-green-400' : deposit.status === 'failed' ? 'bg-red-500/10 text-red-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                    {deposit.status === 'completed' ? <ArrowUpRight className="w-4 h-4" /> : <Clock3 className="w-4 h-4" />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-display font-bold tracking-wider uppercase">Crypto Deposit</div>
+                    <div className="text-xs text-white/40 tracking-wider truncate">
+                      {deposit.status} · {deposit.coin || deposit.method}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="font-display font-bold tracking-wider">${parseFloat(deposit.amount).toFixed(2)}</div>
+                  <div className="text-[10px] text-white/30 font-display tracking-wider">
+                    {new Date(deposit.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </motion.div>
 
