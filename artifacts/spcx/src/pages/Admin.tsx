@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Lock, Check, X, DollarSign, Wallet, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useSendAdminNotification } from '@workspace/api-client-react';
 
 type Investor = { id: number; fullName: string; email: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; shares: string; avgCost: string };
 type Deposit = { id: number; investorId: number; fullName: string; email: string; amount: string; method: 'card' | 'crypto'; coin: string | null; status: 'pending' | 'completed' | 'failed'; createdAt: string };
@@ -47,7 +46,7 @@ export default function Admin() {
   const [savingConfig, setSavingConfig] = useState(false);
   const [notificationEmail, setNotificationEmail] = useState('');
   const [notificationMessage, setNotificationMessage] = useState('');
-  const sendNotification = useSendAdminNotification();
+  const [sendingNotification, setSendingNotification] = useState(false);
 
   const loadInvestors = async (pw: string) => {
     const data = await adminFetch('/admin/investors', pw);
@@ -172,16 +171,20 @@ export default function Admin() {
       return;
     }
 
-    sendNotification.mutate(
-      { data: { email: notificationEmail, message: notificationMessage.trim() } },
-      {
-        onSuccess: () => {
-          toast.success('Message sent to the investor.');
-          setNotificationMessage('');
-        },
-        onError: (err: any) => toast.error(err?.data?.error || 'Failed to send message.'),
-      },
-    );
+    setSendingNotification(true);
+    adminFetch('/admin/notifications', password, {
+      method: 'POST',
+      body: JSON.stringify({
+        email: notificationEmail.trim(),
+        message: notificationMessage.trim(),
+      }),
+    })
+      .then(() => {
+        toast.success('Message sent to the investor.');
+        setNotificationMessage('');
+      })
+      .catch((err: any) => toast.error(err.message || 'Failed to send message.'))
+      .finally(() => setSendingNotification(false));
   };
 
   if (!authed) {
@@ -339,10 +342,10 @@ export default function Admin() {
             </div>
             <button
               type="submit"
-              disabled={sendNotification.isPending}
+              disabled={sendingNotification}
               className="w-full bg-white text-black font-display font-bold text-lg tracking-widest uppercase py-4 hover:bg-white/90 disabled:opacity-50 transition-colors cursor-pointer"
             >
-              {sendNotification.isPending ? 'Sending...' : 'Send Message'}
+              {sendingNotification ? 'Sending...' : 'Send Message'}
             </button>
           </form>
         )}
