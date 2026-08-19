@@ -108,7 +108,55 @@ export const GetHoldingsResponse = zod.object({
   "shares": zod.string(),
   "avgCost": zod.string(),
   "cashBalance": zod.string(),
+  "withdrawalEnabled": zod.boolean(),
   "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List withdrawal requests for the current user
+ */
+export const ListWithdrawalsQueryParams = zod.object({
+  "email": zod.coerce.string()
+})
+
+export const ListWithdrawalsResponseItem = zod.object({
+  "id": zod.number(),
+  "investorId": zod.number(),
+  "email": zod.string(),
+  "amount": zod.string(),
+  "coin": zod.string(),
+  "address": zod.string(),
+  "status": zod.enum(['pending', 'completed', 'failed']),
+  "createdAt": zod.coerce.date()
+})
+export const ListWithdrawalsResponse = zod.array(ListWithdrawalsResponseItem)
+
+
+/**
+ * @summary Request a crypto withdrawal when access is enabled for the investor
+ */
+
+export const createWithdrawalBodyAddressMin = 10;
+
+
+
+export const CreateWithdrawalBody = zod.object({
+  "email": zod.string(),
+  "amount": zod.number().min(1),
+  "coin": zod.enum(['BTC', 'ETH', 'DOGE']),
+  "address": zod.string().min(createWithdrawalBodyAddressMin)
+})
+
+export const CreateWithdrawalResponse = zod.object({
+  "id": zod.number(),
+  "investorId": zod.number(),
+  "email": zod.string(),
+  "amount": zod.string(),
+  "coin": zod.string(),
+  "address": zod.string(),
+  "status": zod.enum(['pending', 'completed', 'failed']),
+  "createdAt": zod.coerce.date()
 })
 
 
@@ -137,6 +185,7 @@ export const BuySharesResponse = zod.object({
   "shares": zod.string(),
   "avgCost": zod.string(),
   "cashBalance": zod.string(),
+  "withdrawalEnabled": zod.boolean(),
   "updatedAt": zod.coerce.date()
 })
 
@@ -158,6 +207,7 @@ export const SellSharesResponse = zod.object({
   "shares": zod.string(),
   "avgCost": zod.string(),
   "cashBalance": zod.string(),
+  "withdrawalEnabled": zod.boolean(),
   "updatedAt": zod.coerce.date()
 })
 
@@ -228,7 +278,8 @@ export const ListAdminInvestorsResponseItem = zod.object({
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.coerce.date(),
   "shares": zod.string(),
-  "avgCost": zod.string()
+  "avgCost": zod.string(),
+  "withdrawalEnabled": zod.boolean()
 })
 export const ListAdminInvestorsResponse = zod.array(ListAdminInvestorsResponseItem)
 
@@ -251,7 +302,8 @@ export const UpdateInvestorStatusResponse = zod.object({
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.coerce.date(),
   "shares": zod.string(),
-  "avgCost": zod.string()
+  "avgCost": zod.string(),
+  "withdrawalEnabled": zod.boolean()
 })
 
 
@@ -278,6 +330,7 @@ export const CreditInvestorResponse = zod.object({
   "shares": zod.string(),
   "avgCost": zod.string(),
   "cashBalance": zod.string(),
+  "withdrawalEnabled": zod.boolean(),
   "updatedAt": zod.coerce.date()
 })
 
@@ -390,6 +443,72 @@ export const UpdateSiteConfigBody = zod.object({
 export const UpdateSiteConfigResponse = zod.object({
   "sellingEnabled": zod.boolean()
 })
+
+
+/**
+ * @summary Enable or disable withdrawals for one investor (admin only)
+ */
+export const UpdateInvestorWithdrawalAccessParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateInvestorWithdrawalAccessBody = zod.object({
+  "withdrawalEnabled": zod.boolean()
+})
+
+export const UpdateInvestorWithdrawalAccessResponse = zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "createdAt": zod.coerce.date(),
+  "shares": zod.string(),
+  "avgCost": zod.string(),
+  "withdrawalEnabled": zod.boolean()
+})
+
+
+/**
+ * @summary List all investor withdrawal requests (admin only)
+ */
+export const ListAdminWithdrawalsResponseItem = zod.object({
+  "id": zod.number(),
+  "investorId": zod.number(),
+  "email": zod.string(),
+  "amount": zod.string(),
+  "coin": zod.string(),
+  "address": zod.string(),
+  "status": zod.enum(['pending', 'completed', 'failed']),
+  "createdAt": zod.coerce.date()
+}).and(zod.object({
+  "fullName": zod.string()
+}))
+export const ListAdminWithdrawalsResponse = zod.array(ListAdminWithdrawalsResponseItem)
+
+
+/**
+ * @summary Update a withdrawal request status (admin only)
+ */
+export const UpdateWithdrawalStatusParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateWithdrawalStatusBody = zod.object({
+  "status": zod.enum(['pending', 'completed', 'failed'])
+})
+
+export const UpdateWithdrawalStatusResponse = zod.object({
+  "id": zod.number(),
+  "investorId": zod.number(),
+  "email": zod.string(),
+  "amount": zod.string(),
+  "coin": zod.string(),
+  "address": zod.string(),
+  "status": zod.enum(['pending', 'completed', 'failed']),
+  "createdAt": zod.coerce.date()
+}).and(zod.object({
+  "fullName": zod.string()
+}))
 
 
 /**

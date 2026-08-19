@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, investorsTable, holdingsTable, depositsTable, depositAddressesTable, siteConfigTable, notificationsTable } from "@workspace/db";
+import { db, investorsTable, holdingsTable, depositsTable, depositAddressesTable, siteConfigTable, notificationsTable, withdrawalsTable } from "@workspace/db";
 import { SendAdminNotificationBody } from "@workspace/api-zod";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
@@ -40,6 +40,7 @@ router.get("/admin/investors", async (req, res) => {
           createdAt: inv.createdAt.toISOString(),
           shares: h?.shares ?? "0",
           avgCost: h?.avgCost ?? "0",
+          withdrawalEnabled: inv.withdrawalEnabled,
         };
       })
     );
@@ -96,9 +97,55 @@ router.patch("/admin/investors/:id/status", async (req, res) => {
       createdAt: investor.createdAt.toISOString(),
       shares: h?.shares ?? "0",
       avgCost: h?.avgCost ?? "0",
+      withdrawalEnabled: investor.withdrawalEnabled,
     });
   } catch (err) {
     req.log.error({ err }, "Failed to update investor status");
+    res.status(500).json({ error: "Something went wrong." });
+  }
+});
+
+// PATCH /api/admin/investors/:id/withdrawal-access — control access for one investor
+router.patch("/admin/investors/:id/withdrawal-access", async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id < 1) {
+    res.status(400).json({ error: "Invalid investor ID." });
+    return;
+  }
+
+  const parsed = z.object({ withdrawalEnabled: z.boolean() }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Provide withdrawalEnabled as a boolean." });
+    return;
+  }
+
+  try {
+    const [investor] = await db
+      .update(investorsTable)
+      .set({ withdrawalEnabled: parsed.data.withdrawalEnabled })
+      .where(eq(investorsTable.id, id))
+      .returning();
+
+    if (!investor) {
+      res.status(404).json({ error: "Investor not found." });
+      return;
+    }
+
+    const [holding] = await db.select().from(holdingsTable).where(eq(holdingsTable.investorId, id)).limit(1);
+    res.json({
+      id: investor.id,
+      fullName: investor.fullName,
+      email: investor.email,
+      status: investor.status,
+      createdAt: investor.createdAt.toISOString(),
+      shares: holding?.shares ?? "0",
+      avgCost: holding?.avgCost ?? "0",
+      withdrawalEnabled: investor.withdrawalEnabled,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to update investor withdrawal access");
     res.status(500).json({ error: "Something went wrong." });
   }
 });
@@ -403,6 +450,108 @@ router.post("/admin/notifications", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Failed to send admin notification");
+    res.status(500).json({ error: "Something went wrong." });
+  }
+});
+
+// GET /api/admin/withdrawals — list withdrawal requests for operations review
+router.get("/admin/withdrawals", async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+
+  try {
+    const withdrawals = await db
+      .select({
+        id: withdrawalsTable.id,
+        investorId: withdrawalsTable.investorId,
+        email: withdrawalsTable.email,
+        fullName: investorsTable.fullName,
+        amount: withdrawalsTable.amount,
+        coin: withdrawalsTable.coin,
+        address: withdrawalsTable.address,
+        status: withdrawalsTable.status,
+        createdAt: withdrawalsTable.createdAt,
+      })
+      .from(withdrawalsTable)
+      .leftJoin(investorsTable, eq(withdrawalsTable.investorId, investorsTable.id))
+      .orderBy(desc(withdrawalsTable.createdAt));
+
+    res.json(withdrawals.map((withdrawal) => ({
+      ...withdrawal,
+      fullName: withdrawal.fullName ?? "—",
+      createdAt: withdrawal.createdAt.toISOString(),
+    })));
+  } catch (err) {
+    req.log.error({ err }, "Failed to list withdrawals");
+    res.status(500).json({ error: "Something went wrong." });
+  }
+});
+
+// PATCH /api/admin/withdrawals/:id/status — complete or fail a pending request
+router.patch("/admin/withdrawals/:id/status", async (req, res) => {
+  if (!checkAdminAuth(req, res)) return;
+
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id < 1) {
+    res.status(400).json({ error: "Invalid withdrawal ID." });
+    return;
+  }
+
+  const parsed = z.object({ status: z.enum(["completed", "failed"]) }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Status must be completed or failed." });
+    return;
+  }
+
+  try {
+    const result = await db.transaction(async (tx) => {
+      const [existing] = await tx.select().from(withdrawalsTable).where(eq(withdrawalsTable.id, id)).limit(1);
+      if (!existing) throw new Error("WITHDRAWAL_NOT_FOUND");
+      if (existing.status !== "pending") throw new Error("WITHDRAWAL_ALREADY_RESOLVED");
+
+      const [withdrawal] = await tx
+        .update(withdrawalsTable)
+        .set({ status: parsed.data.status })
+        .where(eq(withdrawalsTable.id, id))
+        .returning();
+
+      if (parsed.data.status === "failed") {
+        const [holding] = await tx.select().from(holdingsTable).where(eq(holdingsTable.investorId, existing.investorId)).limit(1);
+        const restoredCash = parseFloat(holding?.cashBalance ?? "0") + parseFloat(existing.amount);
+        await tx
+          .insert(holdingsTable)
+          .values({ investorId: existing.investorId, cashBalance: String(restoredCash), updatedAt: new Date() })
+          .onConflictDoUpdate({
+            target: holdingsTable.investorId,
+            set: { cashBalance: String(restoredCash), updatedAt: new Date() },
+          });
+      }
+
+      return withdrawal;
+    });
+
+    const [investor] = await db.select({ fullName: investorsTable.fullName }).from(investorsTable).where(eq(investorsTable.id, result.investorId)).limit(1);
+    res.json({
+      id: result.id,
+      investorId: result.investorId,
+      email: result.email,
+      fullName: investor?.fullName ?? "—",
+      amount: result.amount,
+      coin: result.coin,
+      address: result.address,
+      status: result.status,
+      createdAt: result.createdAt.toISOString(),
+    });
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : "";
+    if (reason === "WITHDRAWAL_NOT_FOUND") {
+      res.status(404).json({ error: "Withdrawal not found." });
+      return;
+    }
+    if (reason === "WITHDRAWAL_ALREADY_RESOLVED") {
+      res.status(400).json({ error: "This withdrawal has already been resolved." });
+      return;
+    }
+    req.log.error({ err }, "Failed to update withdrawal status");
     res.status(500).json({ error: "Something went wrong." });
   }
 });

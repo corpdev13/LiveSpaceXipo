@@ -18,7 +18,7 @@ import {
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
 import SideNav from '../components/SideNav';
 import NotificationBell from '../components/NotificationBell';
-import { ArrowDownRight, ArrowUpRight, Bell, Clock3, Wallet, TrendingUp } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Bell, Clock3, Wallet, TrendingUp, ArrowUpFromLine } from 'lucide-react';
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -157,11 +157,12 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-12">
-            {[
+             {[
               { label: 'Buy Shares', icon: TrendingUp, path: '/trade', style: 'bg-[#1a8a4a] hover:bg-[#1a9a52]' },
               { label: 'Deposit Crypto', icon: Wallet, path: '/orders', style: 'border border-white/20 hover:border-white/40' },
+               ...(holdings?.withdrawalEnabled ? [{ label: 'Withdraw Crypto', icon: ArrowUpFromLine, path: '/orders?mode=withdraw', style: 'border border-white/20 hover:border-white/40' }] : []),
               { label: 'Updates', icon: Bell, path: '/updates', style: 'border border-white/20 hover:border-white/40' },
-              { label: 'Activity', icon: Clock3, path: '/updates', style: 'border border-white/20 hover:border-white/40' },
+               { label: 'Activity', icon: Clock3, path: '/updates', style: 'border border-white/20 hover:border-white/40' },
             ].map((action) => (
               <button
                 key={action.label}
@@ -238,10 +239,15 @@ export default function Dashboard() {
             <div className="text-sm text-white/50 font-display tracking-widest uppercase mt-2">
               Cash Balance: ${parseFloat(holdings?.cashBalance ?? '0').toFixed(2)}
             </div>
-            <div className="flex gap-3 mt-4">
+             <div className="flex flex-wrap gap-3 mt-4">
               <button onClick={() => setLocation('/orders')} className="flex-1 border border-white/20 hover:border-white/40 text-white font-display font-bold text-sm tracking-widest uppercase py-3 transition-colors cursor-pointer">
                 Deposit Funds
               </button>
+               {holdings?.withdrawalEnabled && (
+                 <button onClick={() => setLocation('/orders?mode=withdraw')} className="flex-1 border border-white/20 hover:border-white/40 text-white font-display font-bold text-sm tracking-widest uppercase py-3 transition-colors cursor-pointer">
+                   Withdraw
+                 </button>
+               )}
               <button onClick={() => setLocation('/trade')} className="flex-1 bg-[#1a8a4a] hover:bg-[#1a9a52] text-white font-display font-bold text-sm tracking-widest uppercase py-3 transition-colors cursor-pointer">
                 Trade
               </button>

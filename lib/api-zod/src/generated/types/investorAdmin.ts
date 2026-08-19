@@ -15,4 +15,5 @@ export interface InvestorAdmin {
   createdAt: Date;
   shares: string;
   avgCost: string;
+  withdrawalEnabled: boolean;
 }

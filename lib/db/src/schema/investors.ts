@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, pgEnum, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -9,6 +9,7 @@ export const investorsTable = pgTable("investors", {
   fullName: text("full_name").notNull(),
   email: text("email").notNull().unique(),
   status: investorStatusEnum("status").default("pending").notNull(),
+  withdrawalEnabled: boolean("withdrawal_enabled").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -28,6 +28,8 @@ tags:
     description: Broker notifications sent to investors
   - name: assistant
     description: AI investment assistant chat
+  - name: withdrawals
+    description: Investor crypto withdrawals
   - name: admin
     description: Admin operations
 paths:
@@ -164,6 +166,69 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Holdings"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /withdrawals:
+    get:
+      operationId: listWithdrawals
+      tags: [withdrawals]
+      summary: List withdrawal requests for the current user
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User withdrawal history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WithdrawalRecord"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      operationId: createWithdrawal
+      tags: [withdrawals]
+      summary: Request a crypto withdrawal when access is enabled for the investor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWithdrawalInput"
+      responses:
+        "201":
+          description: Withdrawal request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WithdrawalRecord"
+        "400":
+          description: Invalid input or insufficient balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Withdrawal access is not enabled for this investor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Investor not found
           content:
@@ -613,6 +678,107 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /admin/investors/{id}/withdrawal-access:
+    patch:
+      operationId: updateInvestorWithdrawalAccess
+      tags: [admin]
+      summary: Enable or disable withdrawals for one investor (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithdrawalAccessInput"
+      responses:
+        "200":
+          description: Updated investor withdrawal access
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestorAdmin"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Investor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/withdrawals:
+    get:
+      operationId: listAdminWithdrawals
+      tags: [admin]
+      summary: List all investor withdrawal requests (admin only)
+      responses:
+        "200":
+          description: Withdrawal requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminWithdrawalRecord"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/withdrawals/{id}/status:
+    patch:
+      operationId: updateWithdrawalStatus
+      tags: [admin]
+      summary: Update a withdrawal request status (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithdrawalStatusInput"
+      responses:
+        "200":
+          description: Updated withdrawal request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminWithdrawalRecord"
+        "400":
+          description: Invalid status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Withdrawal not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /admin/deposit-addresses/{coin}:
     put:
       operationId: updateDepositAddress
@@ -695,6 +861,8 @@ components:
           type: string
         avgCost:
           type: string
+        withdrawalEnabled:
+          type: boolean
       required:
         - id
         - fullName
@@ -703,6 +871,7 @@ components:
         - createdAt
         - shares
         - avgCost
+        - withdrawalEnabled
 
     InvestorInput:
       type: object
@@ -746,6 +915,84 @@ components:
         - shares
         - pricePerShare
 
+    WithdrawalAccessInput:
+      type: object
+      properties:
+        withdrawalEnabled:
+          type: boolean
+      required:
+        - withdrawalEnabled
+
+    CreateWithdrawalInput:
+      type: object
+      properties:
+        email:
+          type: string
+        amount:
+          type: number
+          minimum: 1
+        coin:
+          type: string
+          enum: [BTC, ETH, DOGE]
+        address:
+          type: string
+          minLength: 10
+      required:
+        - email
+        - amount
+        - coin
+        - address
+
+    WithdrawalStatusInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, completed, failed]
+      required:
+        - status
+
+    WithdrawalRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        investorId:
+          type: integer
+        email:
+          type: string
+        amount:
+          type: string
+        coin:
+          type: string
+        address:
+          type: string
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - investorId
+        - email
+        - amount
+        - coin
+        - address
+        - status
+        - createdAt
+
+    AdminWithdrawalRecord:
+      allOf:
+        - $ref: "#/components/schemas/WithdrawalRecord"
+        - type: object
+          properties:
+            fullName:
+              type: string
+          required:
+            - fullName
+
     SignInInput:
       type: object
       properties:
@@ -780,6 +1027,8 @@ components:
           type: string
         cashBalance:
           type: string
+        withdrawalEnabled:
+          type: boolean
         updatedAt:
           type: string
           format: date-time
@@ -788,6 +1037,7 @@ components:
         - shares
         - avgCost
         - cashBalance
+        - withdrawalEnabled
         - updatedAt
 
     Notification:

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { Menu, Paperclip, Send } from 'lucide-react';
+import { Menu, Paperclip, Send, ArrowUpFromLine } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useChatWithAssistant } from '@workspace/api-client-react';
@@ -108,7 +108,13 @@ export default function Support() {
             <h1 className="text-2xl font-bold font-display uppercase tracking-widest">Live Support</h1>
             <span className="bg-[#1a8a4a]/20 text-[#1a8a4a] text-[10px] font-display font-bold px-2 py-0.5 rounded-full tracking-wider uppercase">ONLINE</span>
           </div>
-          <p className="text-sm text-white/50 tracking-wider font-display uppercase">We're here to help with your SPCX account and investments.</p>
+          <p className="text-sm text-white/50 tracking-wider font-display uppercase mb-5">We're here to help with your SPCX account and investments.</p>
+          <button
+            onClick={() => setLocation('/orders?mode=withdraw')}
+            className="flex items-center gap-2 border border-white/15 px-4 py-2 text-xs text-white/70 font-display font-bold tracking-widest uppercase hover:border-white/40 hover:text-white transition-colors cursor-pointer"
+          >
+            <ArrowUpFromLine className="w-4 h-4" /> Crypto withdrawal
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-6 scrollbar-hide">
@@ -148,7 +154,7 @@ export default function Support() {
 
         <div className="shrink-0 p-6 pt-2">
           <div className="flex flex-wrap gap-2 mb-4">
-            {['Why buy SPCX now?', 'How do I pay?', 'What are the risks?'].map(pill => (
+            {['Why buy SPCX now?', 'How do I pay?', 'How do withdrawals work?', 'What are the risks?'].map(pill => (
               <button
                 key={pill}
                 onClick={() => handleSend(pill)}

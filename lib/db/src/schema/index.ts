@@ -4,3 +4,4 @@ export * from "./holdings";
 export * from "./depositAddresses";
 export * from "./siteConfig";
 export * from "./notifications";
+export * from "./withdrawals";

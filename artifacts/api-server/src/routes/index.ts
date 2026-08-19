@@ -9,6 +9,7 @@ import holdingsRouter from "./holdings";
 import tradeRouter from "./trade";
 import notificationsRouter from "./notifications";
 import assistantRouter from "./assistant";
+import withdrawalsRouter from "./withdrawals";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(holdingsRouter);
 router.use(tradeRouter);
 router.use(notificationsRouter);
 router.use(assistantRouter);
+router.use(withdrawalsRouter);
 
 export default router;

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Menu, ArrowUpRight } from 'lucide-react';
+import { Menu, ArrowUpRight, Wallet, BarChart3, History, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useGetHoldings, getGetHoldingsQueryKey, useGetStockQuote, useListDeposits, getListDepositsQueryKey, useListWithdrawals, getListWithdrawalsQueryKey } from '@workspace/api-client-react';
 import SideNav from '../components/SideNav';
 import NotificationBell from '../components/NotificationBell';
 import elonPhoto from '@assets/IMG_0319_1784055905752.jpeg';
@@ -11,6 +12,11 @@ export default function Management() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('spcx_user') || 'null') : null;
+  const email: string = user?.email ?? '';
+  const { data: holdings } = useGetHoldings({ email }, { query: { enabled: !!email, queryKey: getGetHoldingsQueryKey({ email }) } });
+  const { data: quote } = useGetStockQuote();
+  const { data: deposits } = useListDeposits({ email }, { query: { enabled: !!email, queryKey: getListDepositsQueryKey({ email }) } });
+  const { data: withdrawals } = useListWithdrawals({ email }, { query: { enabled: !!email, queryKey: getListWithdrawalsQueryKey({ email }) } });
 
   useEffect(() => {
     if (!user) setLocation('/signin');
@@ -41,8 +47,58 @@ export default function Management() {
       <main className="flex-1 px-6 py-8 max-w-4xl mx-auto w-full">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-10">
           <h1 className="text-3xl font-bold font-display uppercase tracking-widest mb-2">Management</h1>
-          <p className="text-sm text-white/50 tracking-wider font-display uppercase">Leadership & corporate governance.</p>
+          <p className="text-sm text-white/50 tracking-wider font-display uppercase">Account management, portfolio oversight & corporate governance.</p>
         </motion.div>
+
+        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="mb-14">
+          <div className="flex items-center justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-xs text-white/40 font-display tracking-widest uppercase mb-1">Investor account</h2>
+              <p className="text-lg font-display font-bold tracking-wider">{user?.fullName || 'Your SPCX account'}</p>
+            </div>
+            <span className="flex items-center gap-2 text-xs text-green-400 font-display tracking-widest uppercase"><ShieldCheck className="w-4 h-4" /> Approved</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            {[
+              { label: 'Cash Balance', value: `$${parseFloat(holdings?.cashBalance ?? '0').toFixed(2)}`, icon: Wallet },
+              { label: 'Shares Owned', value: parseFloat(holdings?.shares ?? '0').toFixed(4), icon: BarChart3 },
+              { label: 'Share Value', value: `$${(parseFloat(holdings?.shares ?? '0') * (quote?.price ?? 147.62)).toFixed(2)}`, icon: BarChart3 },
+              { label: 'Withdrawals', value: holdings?.withdrawalEnabled ? 'Enabled' : 'By approval', icon: ArrowUpRight },
+            ].map((stat) => (
+              <div key={stat.label} className="border border-white/10 bg-[#0a0f14] p-4">
+                <stat.icon className="w-4 h-4 text-white/40 mb-3" />
+                <div className="text-[10px] text-white/40 font-display tracking-widest uppercase mb-1">{stat.label}</div>
+                <div className="text-base font-display font-bold tracking-wider">{stat.value}</div>
+              </div>
+            ))}
+          </div>
+          <div className="grid md:grid-cols-2 gap-5">
+            <div className="border border-white/10 p-5">
+              <div className="flex items-center gap-2 mb-4"><History className="w-4 h-4 text-white/40" /><h3 className="text-xs font-display font-bold tracking-widest uppercase">Recent deposits</h3></div>
+              <div className="space-y-3">
+                {!deposits?.length && <p className="text-sm text-white/40">No deposits recorded.</p>}
+                {deposits?.slice(0, 3).map((deposit) => (
+                  <div key={deposit.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-white/60">{deposit.coin || deposit.method} · {deposit.status}</span>
+                    <span className="font-display font-bold">${parseFloat(deposit.amount).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="border border-white/10 p-5">
+              <div className="flex items-center gap-2 mb-4"><ArrowUpRight className="w-4 h-4 text-white/40" /><h3 className="text-xs font-display font-bold tracking-widest uppercase">Withdrawal activity</h3></div>
+              <div className="space-y-3">
+                {!withdrawals?.length && <p className="text-sm text-white/40">No withdrawal requests.</p>}
+                {withdrawals?.slice(0, 3).map((withdrawal) => (
+                  <div key={withdrawal.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-white/60">{withdrawal.coin} · {withdrawal.status}</span>
+                    <span className="font-display font-bold">${parseFloat(withdrawal.amount).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.section>
 
         <div className="flex flex-col gap-6 mb-12">
           {leaders.map((leader, i) => (

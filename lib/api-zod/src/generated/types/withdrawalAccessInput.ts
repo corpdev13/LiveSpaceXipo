@@ -6,11 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Holdings {
-  investorId: number;
-  shares: string;
-  avgCost: string;
-  cashBalance: string;
+export interface WithdrawalAccessInput {
   withdrawalEnabled: boolean;
-  updatedAt: Date;
 }

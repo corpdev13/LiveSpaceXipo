@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Lock, Check, X, DollarSign, Wallet, TrendingUp } from 'lucide-react';
+import { Lock, Check, X, DollarSign, Wallet, TrendingUp, ArrowDownToLine, Copy } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-type Investor = { id: number; fullName: string; email: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; shares: string; avgCost: string };
+type Investor = { id: number; fullName: string; email: string; status: 'pending' | 'approved' | 'rejected'; createdAt: string; shares: string; avgCost: string; withdrawalEnabled: boolean };
 type Deposit = { id: number; investorId: number; fullName: string; email: string; amount: string; method: 'card' | 'crypto'; coin: string | null; status: 'pending' | 'completed' | 'failed'; createdAt: string };
 type DepositAddress = { coin: string; address: string; updatedAt: string };
+type Withdrawal = { id: number; investorId: number; fullName: string; email: string; amount: string; coin: string; address: string; status: 'pending' | 'completed' | 'failed'; createdAt: string };
 
-const TABS = ['Investors', 'Deposits', 'Credit User', 'Notify User', 'Deposit Addresses', 'Trading'] as const;
+const TABS = ['Investors', 'Deposits', 'Credit', 'Withdrawals', 'Notify User', 'Deposit Addresses', 'Trading'] as const;
 type Tab = typeof TABS[number];
 
 async function adminFetch(path: string, password: string, options: RequestInit = {}) {
@@ -35,6 +36,7 @@ export default function Admin() {
 
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [addresses, setAddresses] = useState<DepositAddress[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -55,6 +57,10 @@ export default function Admin() {
   const loadDeposits = async (pw: string) => {
     const data = await adminFetch('/admin/deposits', pw);
     setDeposits(data);
+  };
+  const loadWithdrawals = async (pw: string) => {
+    const data = await adminFetch('/admin/withdrawals', pw);
+    setWithdrawals(data);
   };
   const loadAddresses = async (pw: string) => {
     const data = await adminFetch('/admin/deposit-addresses', pw);
@@ -88,8 +94,9 @@ export default function Admin() {
   useEffect(() => {
     if (!authed) return;
     setLoading(true);
-    const load = tab === 'Investors' || tab === 'Credit User' || tab === 'Notify User' ? loadInvestors
+    const load = tab === 'Investors' || tab === 'Credit' || tab === 'Notify User' ? loadInvestors
       : tab === 'Deposits' ? loadDeposits
+      : tab === 'Withdrawals' ? loadWithdrawals
       : tab === 'Trading' ? loadSiteConfig
       : loadAddresses;
     load(password).catch((err) => toast.error(err.message)).finally(() => setLoading(false));
@@ -126,6 +133,32 @@ export default function Admin() {
       await adminFetch(`/admin/deposits/${id}/status`, password, { method: 'PATCH', body: JSON.stringify({ status }) });
       toast.success(`Deposit marked ${status}.`);
       loadDeposits(password);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleWithdrawalAccess = async (investor: Investor) => {
+    try {
+      await adminFetch(`/admin/investors/${investor.id}/withdrawal-access`, password, {
+        method: 'PATCH',
+        body: JSON.stringify({ withdrawalEnabled: !investor.withdrawalEnabled }),
+      });
+      toast.success(`Withdrawals ${!investor.withdrawalEnabled ? 'enabled' : 'disabled'} for ${investor.fullName}.`);
+      await loadInvestors(password);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleWithdrawalStatus = async (id: number, status: 'completed' | 'failed') => {
+    try {
+      await adminFetch(`/admin/withdrawals/${id}/status`, password, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+      toast.success(`Withdrawal marked ${status}.`);
+      await loadWithdrawals(password);
     } catch (err: any) {
       toast.error(err.message);
     }
@@ -236,7 +269,7 @@ export default function Admin() {
           <div className="space-y-3">
             {investors.length === 0 && <p className="text-white/40">No investors yet.</p>}
             {investors.map(inv => (
-              <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-white/10 p-4">
+                <div key={inv.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-white/10 p-4">
                 <div>
                   <div className="font-display font-bold tracking-wider">{inv.fullName}</div>
                   <div className="text-sm text-white/50">{inv.email}</div>
@@ -252,6 +285,14 @@ export default function Admin() {
                   {inv.status !== 'rejected' && (
                     <button onClick={() => handleStatusUpdate(inv.id, 'rejected')} className="p-2 border border-white/10 hover:border-red-400 hover:text-red-400 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
                   )}
+                    <button
+                      onClick={() => handleWithdrawalAccess(inv)}
+                      disabled={inv.status !== 'approved'}
+                      className={`px-3 py-2 border text-[10px] font-display tracking-widest uppercase transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${inv.withdrawalEnabled ? 'border-green-400/50 text-green-400 hover:border-green-400' : 'border-white/20 text-white/50 hover:border-white/50 hover:text-white'}`}
+                      title={inv.status !== 'approved' ? 'Approve this investor first' : undefined}
+                    >
+                      {inv.withdrawalEnabled ? 'Withdrawals On' : 'Enable Withdrawals'}
+                    </button>
                 </div>
               </div>
             ))}
@@ -283,7 +324,7 @@ export default function Admin() {
           </div>
         )}
 
-        {!loading && tab === 'Credit User' && (
+         {!loading && tab === 'Credit' && (
           <form onSubmit={handleCredit} className="max-w-md space-y-5">
             <div>
               <label className="block text-xs text-white/40 font-display tracking-widest uppercase mb-2">Investor</label>
@@ -315,6 +356,42 @@ export default function Admin() {
             </button>
           </form>
         )}
+
+         {!loading && tab === 'Withdrawals' && (
+           <div className="space-y-3">
+             <div className="flex items-center gap-3 mb-5">
+               <ArrowDownToLine className="w-5 h-5 text-white/50" />
+               <div>
+                 <h2 className="font-display font-bold tracking-widest uppercase">Crypto Withdrawals</h2>
+                 <p className="text-xs text-white/40 mt-1">Review requests and mark completed only after sending funds.</p>
+               </div>
+             </div>
+             {withdrawals.length === 0 && <p className="text-white/40">No withdrawal requests yet.</p>}
+             {withdrawals.map((withdrawal) => (
+               <div key={withdrawal.id} className="border border-white/10 p-4 space-y-3">
+                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                   <div>
+                     <div className="font-display font-bold tracking-wider">{withdrawal.fullName} <span className="text-white/40 text-sm">({withdrawal.email})</span></div>
+                     <div className="text-lg font-display font-bold mt-1">${parseFloat(withdrawal.amount).toFixed(2)} · {withdrawal.coin}</div>
+                     <div className="text-xs text-white/40 mt-1 break-all flex items-start gap-2"><span>{withdrawal.address}</span><button onClick={() => navigator.clipboard.writeText(withdrawal.address)} title="Copy wallet address" className="shrink-0 hover:text-white cursor-pointer"><Copy className="w-3.5 h-3.5" /></button></div>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <span className={`text-xs font-display tracking-widest uppercase px-3 py-1 rounded-full ${withdrawal.status === 'completed' ? 'bg-green-500/20 text-green-400' : withdrawal.status === 'failed' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                       {withdrawal.status}
+                     </span>
+                     {withdrawal.status === 'pending' && (
+                       <>
+                         <button onClick={() => handleWithdrawalStatus(withdrawal.id, 'completed')} className="p-2 border border-white/10 hover:border-green-400 hover:text-green-400 transition-colors cursor-pointer" title="Mark completed"><Check className="w-4 h-4" /></button>
+                         <button onClick={() => handleWithdrawalStatus(withdrawal.id, 'failed')} className="p-2 border border-white/10 hover:border-red-400 hover:text-red-400 transition-colors cursor-pointer" title="Fail and refund"><X className="w-4 h-4" /></button>
+                       </>
+                     )}
+                   </div>
+                 </div>
+                 <div className="text-[10px] text-white/30 font-display tracking-widest uppercase">{new Date(withdrawal.createdAt).toLocaleString()}</div>
+               </div>
+             ))}
+           </div>
+         )}
 
         {!loading && tab === 'Notify User' && (
           <form onSubmit={handleSendNotification} className="max-w-lg space-y-5">

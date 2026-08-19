@@ -43,6 +43,7 @@ export interface InvestorAdmin {
   createdAt: string;
   shares: string;
   avgCost: string;
+  withdrawalEnabled: boolean;
 }
 
 export interface InvestorInput {
@@ -75,6 +76,65 @@ export interface CreditInput {
   pricePerShare: number;
 }
 
+export interface WithdrawalAccessInput {
+  withdrawalEnabled: boolean;
+}
+
+export type CreateWithdrawalInputCoin = typeof CreateWithdrawalInputCoin[keyof typeof CreateWithdrawalInputCoin];
+
+
+export const CreateWithdrawalInputCoin = {
+  BTC: 'BTC',
+  ETH: 'ETH',
+  DOGE: 'DOGE',
+} as const;
+
+export interface CreateWithdrawalInput {
+  email: string;
+  /** @minimum 1 */
+  amount: number;
+  coin: CreateWithdrawalInputCoin;
+  /** @minLength 10 */
+  address: string;
+}
+
+export type WithdrawalStatusInputStatus = typeof WithdrawalStatusInputStatus[keyof typeof WithdrawalStatusInputStatus];
+
+
+export const WithdrawalStatusInputStatus = {
+  pending: 'pending',
+  completed: 'completed',
+  failed: 'failed',
+} as const;
+
+export interface WithdrawalStatusInput {
+  status: WithdrawalStatusInputStatus;
+}
+
+export type WithdrawalRecordStatus = typeof WithdrawalRecordStatus[keyof typeof WithdrawalRecordStatus];
+
+
+export const WithdrawalRecordStatus = {
+  pending: 'pending',
+  completed: 'completed',
+  failed: 'failed',
+} as const;
+
+export interface WithdrawalRecord {
+  id: number;
+  investorId: number;
+  email: string;
+  amount: string;
+  coin: string;
+  address: string;
+  status: WithdrawalRecordStatus;
+  createdAt: string;
+}
+
+export type AdminWithdrawalRecord = WithdrawalRecord & {
+  fullName: string;
+};
+
 export interface SignInInput {
   email: string;
 }
@@ -99,6 +159,7 @@ export interface Holdings {
   shares: string;
   avgCost: string;
   cashBalance: string;
+  withdrawalEnabled: boolean;
   updatedAt: string;
 }
 
@@ -307,6 +368,10 @@ export const GetStockHistoryPeriod = {
 } as const;
 
 export type GetHoldingsParams = {
+email: string;
+};
+
+export type ListWithdrawalsParams = {
 email: string;
 };
 

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminWithdrawalRecord';
 export * from './assistantChatInput';
 export * from './assistantChatMessage';
 export * from './assistantChatMessageRole';
@@ -14,6 +15,8 @@ export * from './buyInput';
 export * from './createDepositInput';
 export * from './createDepositInputCoin';
 export * from './createDepositInputMethod';
+export * from './createWithdrawalInput';
+export * from './createWithdrawalInputCoin';
 export * from './creditInput';
 export * from './depositAddress';
 export * from './depositAdmin';
@@ -38,6 +41,7 @@ export * from './investorStatusInput';
 export * from './investorStatusInputStatus';
 export * from './listDepositsParams';
 export * from './listNotificationsParams';
+export * from './listWithdrawalsParams';
 export * from './markNotificationsReadInput';
 export * from './notification';
 export * from './sellInput';
@@ -51,3 +55,8 @@ export * from './stockDataPoint';
 export * from './stockHistory';
 export * from './stockQuote';
 export * from './updateDepositAddressInput';
+export * from './withdrawalAccessInput';
+export * from './withdrawalRecord';
+export * from './withdrawalRecordStatus';
+export * from './withdrawalStatusInput';
+export * from './withdrawalStatusInputStatus';
