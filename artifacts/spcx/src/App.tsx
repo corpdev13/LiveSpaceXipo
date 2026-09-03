@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 
 import Home from '@/pages/Home';
 import SignIn from '@/pages/SignIn';
+import SetupPassword from '@/pages/SetupPassword';
 import AccessPending from '@/pages/AccessPending';
 import Dashboard from '@/pages/Dashboard';
 import Management from '@/pages/Management';
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/access-pending" component={AccessPending} />
       <Route path="/signin" component={SignIn} />
+      <Route path="/setup-password" component={SetupPassword} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/admin" component={Admin} />
       <Route path="/management" component={Management} />

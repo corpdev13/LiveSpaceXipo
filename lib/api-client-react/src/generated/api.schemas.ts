@@ -147,6 +147,37 @@ export interface SignInInput {
   password: string;
 }
 
+export interface SignInLookupInput {
+  email: string;
+}
+
+export type SignInLookupResultNext = typeof SignInLookupResultNext[keyof typeof SignInLookupResultNext];
+
+
+export const SignInLookupResultNext = {
+  setup: 'setup',
+  password: 'password',
+} as const;
+
+export interface SignInLookupResult {
+  next: SignInLookupResultNext;
+  email: string;
+  /** @nullable */
+  setupToken: string | null;
+}
+
+export interface PasswordSetupInput {
+  /** @minLength 1 */
+  token: string;
+  /** @minLength 8 */
+  password: string;
+}
+
+export interface PasswordSetupResult {
+  success: boolean;
+  email: string;
+}
+
 export type SignInResultStatus = typeof SignInResultStatus[keyof typeof SignInResultStatus];
 
 

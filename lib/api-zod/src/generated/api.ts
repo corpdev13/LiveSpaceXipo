@@ -52,7 +52,7 @@ export const GetInvestorCountResponse = zod.object({
 
 
 /**
- * @summary Sign in with email — returns investor status
+ * @summary Sign in with email and password — returns investor status
  */
 
 
@@ -65,6 +65,39 @@ export const SignInBody = zod.object({
 export const SignInResponse = zod.object({
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "fullName": zod.string(),
+  "email": zod.string()
+})
+
+
+/**
+ * @summary Determine whether an investor needs password setup or sign-in
+ */
+export const LookupSignInBody = zod.object({
+  "email": zod.string()
+})
+
+export const LookupSignInResponse = zod.object({
+  "next": zod.enum(['setup', 'password']),
+  "email": zod.string(),
+  "setupToken": zod.string().nullable()
+})
+
+
+/**
+ * @summary Set an initial password using a one-time setup token
+ */
+
+export const setupPasswordBodyPasswordMin = 8;
+
+
+
+export const SetupPasswordBody = zod.object({
+  "token": zod.string().min(1),
+  "password": zod.string().min(setupPasswordBodyPasswordMin)
+})
+
+export const SetupPasswordResponse = zod.object({
+  "success": zod.boolean(),
   "email": zod.string()
 })
 

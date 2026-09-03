@@ -5,3 +5,4 @@ export * from "./depositAddresses";
 export * from "./siteConfig";
 export * from "./notifications";
 export * from "./withdrawals";
+export * from "./passwordSetupTokens";

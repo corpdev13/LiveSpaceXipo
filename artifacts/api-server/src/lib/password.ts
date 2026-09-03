@@ -1,4 +1,4 @@
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 const SALT_BYTES = 16;
 const KEY_LENGTH = 64;
@@ -21,4 +21,12 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   } catch {
     return false;
   }
+}
+
+export function createPasswordSetupToken(): string {
+  return randomBytes(32).toString("hex");
+}
+
+export function hashSetupToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
 }

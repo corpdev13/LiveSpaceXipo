@@ -45,9 +45,13 @@ import type {
   ListWithdrawalsParams,
   MarkNotificationsReadInput,
   Notification,
+  PasswordSetupInput,
+  PasswordSetupResult,
   SellInput,
   SendNotificationInput,
   SignInInput,
+  SignInLookupInput,
+  SignInLookupResult,
   SignInResult,
   SiteConfig,
   SiteConfigUpdate,
@@ -320,7 +324,7 @@ export const getSignInUrl = () => {
 }
 
 /**
- * @summary Sign in with email — returns investor status
+ * @summary Sign in with email and password — returns investor status
  */
 export const signIn = async (signInInput: SignInInput, options?: RequestInit): Promise<SignInResult> => {
 
@@ -369,7 +373,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SignInMutationError = ErrorType<ErrorResponse>
 
     /**
- * @summary Sign in with email — returns investor status
+ * @summary Sign in with email and password — returns investor status
  */
 export const useSignIn = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signIn>>, TError,{data: BodyType<SignInInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -380,6 +384,148 @@ export const useSignIn = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getSignInMutationOptions(options));
+    }
+
+export const getLookupSignInUrl = () => {
+
+
+
+
+  return `/api/signin/lookup`
+}
+
+/**
+ * @summary Determine whether an investor needs password setup or sign-in
+ */
+export const lookupSignIn = async (signInLookupInput: SignInLookupInput, options?: RequestInit): Promise<SignInLookupResult> => {
+
+  return customFetch<SignInLookupResult>(getLookupSignInUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(signInLookupInput)
+  }
+);}
+
+
+
+
+
+export const getLookupSignInMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupSignIn>>, TError,{data: BodyType<SignInLookupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof lookupSignIn>>, TError,{data: BodyType<SignInLookupInput>}, TContext> => {
+
+const mutationKey = ['lookupSignIn'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof lookupSignIn>>, {data: BodyType<SignInLookupInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  lookupSignIn(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LookupSignInMutationResult = NonNullable<Awaited<ReturnType<typeof lookupSignIn>>>
+    export type LookupSignInMutationBody = BodyType<SignInLookupInput>
+    export type LookupSignInMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Determine whether an investor needs password setup or sign-in
+ */
+export const useLookupSignIn = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupSignIn>>, TError,{data: BodyType<SignInLookupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof lookupSignIn>>,
+        TError,
+        {data: BodyType<SignInLookupInput>},
+        TContext
+      > => {
+      return useMutation(getLookupSignInMutationOptions(options));
+    }
+
+export const getSetupPasswordUrl = () => {
+
+
+
+
+  return `/api/password/setup`
+}
+
+/**
+ * @summary Set an initial password using a one-time setup token
+ */
+export const setupPassword = async (passwordSetupInput: PasswordSetupInput, options?: RequestInit): Promise<PasswordSetupResult> => {
+
+  return customFetch<PasswordSetupResult>(getSetupPasswordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(passwordSetupInput)
+  }
+);}
+
+
+
+
+
+export const getSetupPasswordMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setupPassword>>, TError,{data: BodyType<PasswordSetupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setupPassword>>, TError,{data: BodyType<PasswordSetupInput>}, TContext> => {
+
+const mutationKey = ['setupPassword'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setupPassword>>, {data: BodyType<PasswordSetupInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  setupPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetupPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof setupPassword>>>
+    export type SetupPasswordMutationBody = BodyType<PasswordSetupInput>
+    export type SetupPasswordMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Set an initial password using a one-time setup token
+ */
+export const useSetupPassword = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setupPassword>>, TError,{data: BodyType<PasswordSetupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setupPassword>>,
+        TError,
+        {data: BodyType<PasswordSetupInput>},
+        TContext
+      > => {
+      return useMutation(getSetupPasswordMutationOptions(options));
     }
 
 export const getGetStockQuoteUrl = () => {

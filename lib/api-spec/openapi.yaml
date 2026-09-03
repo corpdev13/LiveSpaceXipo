@@ -94,7 +94,7 @@ paths:
     post:
       operationId: signIn
       tags: [auth]
-      summary: Sign in with email — returns investor status
+      summary: Sign in with email and password — returns investor status
       requestBody:
         required: true
         content:
@@ -110,6 +110,62 @@ paths:
                 $ref: "#/components/schemas/SignInResult"
         "404":
           description: Email not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /signin/lookup:
+    post:
+      operationId: lookupSignIn
+      tags: [auth]
+      summary: Determine whether an investor needs password setup or sign-in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignInLookupInput"
+      responses:
+        "200":
+          description: Sign-in next step
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignInLookupResult"
+        "404":
+          description: Email not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /password/setup:
+    post:
+      operationId: setupPassword
+      tags: [auth]
+      summary: Set an initial password using a one-time setup token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordSetupInput"
+      responses:
+        "200":
+          description: Password created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordSetupResult"
+        "400":
+          description: Invalid or expired setup token
           content:
             application/json:
               schema:
@@ -1015,6 +1071,53 @@ components:
       required:
         - email
         - password
+
+    SignInLookupInput:
+      type: object
+      properties:
+        email:
+          type: string
+      required:
+        - email
+
+    SignInLookupResult:
+      type: object
+      properties:
+        next:
+          type: string
+          enum: [setup, password]
+        email:
+          type: string
+        setupToken:
+          type: ["string", "null"]
+      required:
+        - next
+        - email
+        - setupToken
+
+    PasswordSetupInput:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 8
+      required:
+        - token
+        - password
+
+    PasswordSetupResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        email:
+          type: string
+      required:
+        - success
+        - email
 
     SignInResult:
       type: object

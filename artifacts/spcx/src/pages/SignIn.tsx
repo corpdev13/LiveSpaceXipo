@@ -1,31 +1,62 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User } from 'lucide-react';
+import { User, ArrowLeft } from 'lucide-react';
 import { useLocation, Link } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { useSignIn } from '@workspace/api-client-react';
+import { useLookupSignIn, useSignIn } from '@workspace/api-client-react';
 import logoImg from '@assets/logo_1784056609292.png';
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
+  password: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 export default function SignIn() {
   const [, setLocation] = useLocation();
+  const [step, setStep] = useState<'email' | 'password'>('email');
+  const lookupSignIn = useLookupSignIn();
   const signIn = useSignIn();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    defaultValues: { email: '', password: '' },
   });
 
   const onSubmit = (data: FormValues) => {
-    signIn.mutate({ data }, {
+    if (step === 'email') {
+      lookupSignIn.mutate({ data: { email: data.email } }, {
+        onSuccess: (res) => {
+          if (res.next === 'setup' && res.setupToken) {
+            sessionStorage.setItem('spcx_password_setup_token', res.setupToken);
+            sessionStorage.setItem('spcx_password_setup_email', res.email);
+            setLocation('/setup-password');
+          } else {
+            setStep('password');
+          }
+        },
+        onError: (error: any) => {
+          const msg = error?.data?.error || "Failed to find your account.";
+          if (error?.status === 404 || msg.toLowerCase().includes("not found")) {
+            toast.error("No account found with this email. Please sign up first.");
+          } else {
+            toast.error(msg);
+          }
+        },
+      });
+      return;
+    }
+
+    if (!data.password) {
+      toast.error("Password is required.");
+      return;
+    }
+
+    signIn.mutate({ data: { email: data.email, password: data.password } }, {
       onSuccess: (res) => {
         if (res.status === 'approved') {
           localStorage.setItem('spcx_user', JSON.stringify({ email: res.email, fullName: res.fullName }));
@@ -38,14 +69,16 @@ export default function SignIn() {
       },
       onError: (error: any) => {
         const msg = error?.data?.error || "Failed to sign in.";
-        if (msg.toLowerCase().includes("not found") || error?.status === 404) {
-          toast.error("No account found with this email. Please sign up first.");
+        if (error?.status === 401) {
+          toast.error("The password you entered is incorrect.");
         } else {
           toast.error(msg);
         }
-      }
+      },
     });
   };
+
+  const isPending = lookupSignIn.isPending || signIn.isPending;
 
   return (
     <div className="min-h-[100dvh] bg-[#050a0f] text-white selection:bg-white/20 flex flex-col">
@@ -71,7 +104,7 @@ export default function SignIn() {
               Investor Access
             </h1>
             <p className="text-white/60 font-light text-lg">
-              Enter your registered email to continue
+              {step === 'email' ? 'Enter your registered email to continue' : 'Enter your password to continue'}
             </p>
           </div>
 
@@ -81,30 +114,47 @@ export default function SignIn() {
                 type="email"
                 placeholder="EMAIL ADDRESS"
                 autoComplete="email"
+                disabled={step === 'password'}
                 {...register("email")}
-                className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-6 py-5 focus:outline-none focus:border-white/80 focus:bg-white/5 transition-all font-display tracking-widest text-lg uppercase"
+                className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-6 py-5 focus:outline-none focus:border-white/80 focus:bg-white/5 transition-all font-display tracking-widest text-lg uppercase disabled:opacity-50"
               />
               {errors.email && <p className="text-red-400 font-display tracking-wider text-sm mt-2">{errors.email.message}</p>}
             </div>
-            <div>
-              <input
-                type="password"
-                placeholder="PASSWORD"
-                autoComplete="current-password"
-                {...register("password")}
-                className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-6 py-5 focus:outline-none focus:border-white/80 focus:bg-white/5 transition-all font-display tracking-widest text-lg uppercase"
-              />
-              {errors.password && <p className="text-red-400 font-display tracking-wider text-sm mt-2">{errors.password.message}</p>}
-            </div>
+            {step === 'password' && (
+              <div>
+                <input
+                  type="password"
+                  placeholder="PASSWORD"
+                  autoComplete="current-password"
+                  autoFocus
+                  {...register("password")}
+                  className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-6 py-5 focus:outline-none focus:border-white/80 focus:bg-white/5 transition-all font-display tracking-widest text-lg uppercase"
+                />
+                {errors.password && <p className="text-red-400 font-display tracking-wider text-sm mt-2">{errors.password.message}</p>}
+              </div>
+            )}
 
             <button
               type="submit"
-              disabled={signIn.isPending}
+              disabled={isPending}
               className="w-full bg-white text-black font-display font-bold text-xl tracking-[0.2em] uppercase py-5 hover:bg-white/90 disabled:opacity-50 transition-colors cursor-pointer"
             >
-              {signIn.isPending ? "Authenticating..." : "Continue"}
+              {lookupSignIn.isPending ? "Checking..." : signIn.isPending ? "Authenticating..." : step === 'email' ? "Continue" : "Sign In"}
             </button>
           </form>
+
+          {step === 'password' && (
+            <button
+              type="button"
+              onClick={() => {
+                setStep('email');
+                setValue('password', '');
+              }}
+              className="mt-6 mx-auto flex items-center gap-2 text-white/50 hover:text-white transition-colors uppercase font-display tracking-widest text-sm cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" /> Use a different email
+            </button>
+          )}
 
           <div className="mt-8 text-center">
             <Link href="/" className="text-white/50 hover:text-white transition-colors uppercase font-display tracking-widest text-sm">
