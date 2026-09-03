@@ -21,6 +21,8 @@ export const InvestorStatus = {
 export interface Investor {
   id: number;
   fullName: string;
+  /** @nullable */
+  phone: string | null;
   email: string;
   status: InvestorStatus;
   createdAt: string;
@@ -47,9 +49,13 @@ export interface InvestorAdmin {
 }
 
 export interface InvestorInput {
+  /** @minLength 7 */
+  phone: string;
   /** @minLength 1 */
   fullName: string;
   email: string;
+  /** @minLength 8 */
+  password: string;
 }
 
 export interface InvestorCount {
@@ -137,6 +143,8 @@ export type AdminWithdrawalRecord = WithdrawalRecord & {
 
 export interface SignInInput {
   email: string;
+  /** @minLength 1 */
+  password: string;
 }
 
 export type SignInResultStatus = typeof SignInResultStatus[keyof typeof SignInResultStatus];

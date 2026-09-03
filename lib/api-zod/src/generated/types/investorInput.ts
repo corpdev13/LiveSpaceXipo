@@ -7,7 +7,11 @@
  */
 
 export interface InvestorInput {
+  /** @minLength 7 */
+  phone: string;
   /** @minLength 1 */
   fullName: string;
   email: string;
+  /** @minLength 8 */
+  password: string;
 }

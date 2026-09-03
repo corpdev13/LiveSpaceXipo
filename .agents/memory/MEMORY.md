@@ -1,3 +1,4 @@
 - [SPCX investor approval flow](spcx-approval-flow.md) — manual admin approval is the confirmed, intentional behavior; do not "fix" it back to auto-approve.
 - [SPCX Resend sandbox mode](spcx-resend-sandbox.md) — investor notification emails 403 to real addresses until a sending domain is verified; not a code bug.
 - [SPCX publishing build environment](spcx-publishing-build-env.md) — production builds must not require runtime-only PORT or BASE_PATH variables.
+- [SPCX password authentication](spcx-password-auth.md) — store new passwords as salted hashes; keep legacy credential columns nullable until reset support exists.

@@ -10,6 +10,8 @@ import type { InvestorStatus } from './investorStatus';
 export interface Investor {
   id: number;
   fullName: string;
+  /** @nullable */
+  phone: string | null;
   email: string;
   status: InvestorStatus;
   createdAt: Date;

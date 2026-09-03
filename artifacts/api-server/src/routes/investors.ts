@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, investorsTable } from "@workspace/db";
 import { CreateInvestorBody } from "@workspace/api-zod";
 import { count } from "drizzle-orm";
+import { hashPassword } from "../lib/password";
 
 const router = Router();
 
@@ -9,21 +10,27 @@ const router = Router();
 router.post("/investors", async (req, res) => {
   const parsed = CreateInvestorBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid input. Full name and email are required." });
+    res.status(400).json({ error: "Invalid input. Phone, full name, email, and a password of at least 8 characters are required." });
     return;
   }
 
-  const { fullName, email } = parsed.data;
+  const { phone, fullName, email, password } = parsed.data;
 
   try {
     const [investor] = await db
       .insert(investorsTable)
-      .values({ fullName: fullName.trim(), email: email.toLowerCase().trim() })
+      .values({
+        phone: phone.trim(),
+        fullName: fullName.trim(),
+        email: email.toLowerCase().trim(),
+        passwordHash: hashPassword(password),
+      })
       .returning();
 
     res.status(201).json({
       id: investor.id,
       fullName: investor.fullName,
+      phone: investor.phone,
       email: investor.email,
       status: investor.status,
       createdAt: investor.createdAt.toISOString(),

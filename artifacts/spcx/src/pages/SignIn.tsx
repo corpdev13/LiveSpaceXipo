@@ -11,6 +11,7 @@ import logoImg from '@assets/logo_1784056609292.png';
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -79,10 +80,21 @@ export default function SignIn() {
               <input
                 type="email"
                 placeholder="EMAIL ADDRESS"
+                autoComplete="email"
                 {...register("email")}
                 className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-6 py-5 focus:outline-none focus:border-white/80 focus:bg-white/5 transition-all font-display tracking-widest text-lg uppercase"
               />
               {errors.email && <p className="text-red-400 font-display tracking-wider text-sm mt-2">{errors.email.message}</p>}
+            </div>
+            <div>
+              <input
+                type="password"
+                placeholder="PASSWORD"
+                autoComplete="current-password"
+                {...register("password")}
+                className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-6 py-5 focus:outline-none focus:border-white/80 focus:bg-white/5 transition-all font-display tracking-widest text-lg uppercase"
+              />
+              {errors.password && <p className="text-red-400 font-display tracking-wider text-sm mt-2">{errors.password.message}</p>}
             </div>
 
             <button

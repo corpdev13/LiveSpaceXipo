@@ -827,6 +827,8 @@ components:
           type: integer
         fullName:
           type: string
+        phone:
+          type: ["string", "null"]
         email:
           type: string
         status:
@@ -838,6 +840,7 @@ components:
       required:
         - id
         - fullName
+        - phone
         - email
         - status
         - createdAt
@@ -876,14 +879,22 @@ components:
     InvestorInput:
       type: object
       properties:
+        phone:
+          type: string
+          minLength: 7
         fullName:
           type: string
           minLength: 1
         email:
           type: string
+        password:
+          type: string
+          minLength: 8
       required:
+        - phone
         - fullName
         - email
+        - password
 
     InvestorCount:
       type: object
@@ -998,8 +1009,12 @@ components:
       properties:
         email:
           type: string
+        password:
+          type: string
+          minLength: 1
       required:
         - email
+        - password
 
     SignInResult:
       type: object

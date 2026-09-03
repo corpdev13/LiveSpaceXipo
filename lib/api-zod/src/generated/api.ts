@@ -19,17 +19,24 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary Sign up for investor access
  */
+export const createInvestorBodyPhoneMin = 7;
+
+
+export const createInvestorBodyPasswordMin = 8;
 
 
 
 export const CreateInvestorBody = zod.object({
+  "phone": zod.string().min(createInvestorBodyPhoneMin),
   "fullName": zod.string().min(1),
-  "email": zod.string()
+  "email": zod.string(),
+  "password": zod.string().min(createInvestorBodyPasswordMin)
 })
 
 export const CreateInvestorResponse = zod.object({
   "id": zod.number(),
   "fullName": zod.string(),
+  "phone": zod.string().nullable(),
   "email": zod.string(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.coerce.date()
@@ -47,8 +54,12 @@ export const GetInvestorCountResponse = zod.object({
 /**
  * @summary Sign in with email — returns investor status
  */
+
+
+
 export const SignInBody = zod.object({
-  "email": zod.string()
+  "email": zod.string(),
+  "password": zod.string().min(1)
 })
 
 export const SignInResponse = zod.object({

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, investorsTable } from "@workspace/db";
 import { SignInBody } from "@workspace/api-zod";
 import { eq } from "drizzle-orm";
+import { verifyPassword } from "../lib/password";
 
 const router = Router();
 
@@ -13,17 +14,27 @@ router.post("/signin", async (req, res) => {
     return;
   }
 
-  const { email } = parsed.data;
+  const { email, password } = parsed.data;
 
   try {
     const [investor] = await db
-      .select()
+      .select({
+        status: investorsTable.status,
+        fullName: investorsTable.fullName,
+        email: investorsTable.email,
+        passwordHash: investorsTable.passwordHash,
+      })
       .from(investorsTable)
       .where(eq(investorsTable.email, email.toLowerCase().trim()))
       .limit(1);
 
     if (!investor) {
       res.status(404).json({ error: "No account found with this email." });
+      return;
+    }
+
+    if (!investor.passwordHash || !verifyPassword(password, investor.passwordHash)) {
+      res.status(401).json({ error: "Invalid email or password." });
       return;
     }
 

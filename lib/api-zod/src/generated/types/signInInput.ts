@@ -8,4 +8,6 @@
 
 export interface SignInInput {
   email: string;
+  /** @minLength 1 */
+  password: string;
 }

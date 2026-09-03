@@ -7,7 +7,9 @@ export const investorStatusEnum = pgEnum("investor_status", ["pending", "approve
 export const investorsTable = pgTable("investors", {
   id: serial("id").primaryKey(),
   fullName: text("full_name").notNull(),
+  phone: text("phone"),
   email: text("email").notNull().unique(),
+  passwordHash: text("password_hash"),
   status: investorStatusEnum("status").default("pending").notNull(),
   withdrawalEnabled: boolean("withdrawal_enabled").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

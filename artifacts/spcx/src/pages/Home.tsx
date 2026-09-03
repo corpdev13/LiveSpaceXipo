@@ -12,8 +12,10 @@ import heroPhoto from '@assets/section-c_1785378506308.webp';
 import logoImg from '@assets/logo_1784056609292.png';
 
 const formSchema = z.object({
+  phone: z.string().min(7, "Enter a valid phone number"),
   fullName: z.string().min(1, "Full name is required"),
   email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -115,8 +117,19 @@ export default function Home() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
                 <input
+                  type="tel"
+                  placeholder="PHONE NUMBER"
+                  autoComplete="tel"
+                  {...register("phone")}
+                  className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-6 py-5 focus:outline-none focus:border-white/80 focus:bg-white/5 transition-all font-display tracking-widest text-lg sm:text-xl uppercase"
+                />
+                {errors.phone && <p className="text-red-400 font-display tracking-wider text-sm mt-2">{errors.phone.message}</p>}
+              </div>
+              <div>
+                <input
                   type="text"
                   placeholder="FULL NAME"
+                  autoComplete="name"
                   {...register("fullName")}
                   className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-6 py-5 focus:outline-none focus:border-white/80 focus:bg-white/5 transition-all font-display tracking-widest text-lg sm:text-xl uppercase"
                 />
@@ -126,10 +139,21 @@ export default function Home() {
                 <input
                   type="email"
                   placeholder="EMAIL ADDRESS"
+                  autoComplete="email"
                   {...register("email")}
                   className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-6 py-5 focus:outline-none focus:border-white/80 focus:bg-white/5 transition-all font-display tracking-widest text-lg sm:text-xl uppercase"
                 />
                 {errors.email && <p className="text-red-400 font-display tracking-wider text-sm mt-2">{errors.email.message}</p>}
+              </div>
+              <div>
+                <input
+                  type="password"
+                  placeholder="PASSWORD (8+ CHARACTERS)"
+                  autoComplete="new-password"
+                  {...register("password")}
+                  className="w-full bg-black/50 border border-white/30 text-white placeholder:text-white/40 px-6 py-5 focus:outline-none focus:border-white/80 focus:bg-white/5 transition-all font-display tracking-widest text-lg sm:text-xl uppercase"
+                />
+                {errors.password && <p className="text-red-400 font-display tracking-wider text-sm mt-2">{errors.password.message}</p>}
               </div>
 
               <button
