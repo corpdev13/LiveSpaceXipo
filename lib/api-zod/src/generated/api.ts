@@ -208,7 +208,9 @@ export const CreateWithdrawalResponse = zod.object({
  * @summary Get public platform configuration (e.g. whether selling is enabled)
  */
 export const GetSiteConfigResponse = zod.object({
-  "sellingEnabled": zod.boolean()
+  "sellingEnabled": zod.boolean(),
+  "marketPrice": zod.number(),
+  "marketCap": zod.string()
 })
 
 
@@ -480,12 +482,22 @@ export const SendAdminNotificationResponse = zod.object({
 /**
  * @summary Update platform configuration, e.g. enable/disable investor selling (admin only)
  */
+export const updateSiteConfigBodyMarketPriceMin = 0.01;
+
+export const updateSiteConfigBodyMarketCapMax = 40;
+
+
+
 export const UpdateSiteConfigBody = zod.object({
-  "sellingEnabled": zod.boolean()
+  "sellingEnabled": zod.boolean().optional(),
+  "marketPrice": zod.number().min(updateSiteConfigBodyMarketPriceMin).optional(),
+  "marketCap": zod.string().min(1).max(updateSiteConfigBodyMarketCapMax).optional()
 })
 
 export const UpdateSiteConfigResponse = zod.object({
-  "sellingEnabled": zod.boolean()
+  "sellingEnabled": zod.boolean(),
+  "marketPrice": zod.number(),
+  "marketCap": zod.string()
 })
 
 

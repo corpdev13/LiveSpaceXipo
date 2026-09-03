@@ -395,23 +395,76 @@ router.put("/admin/deposit-addresses/:coin", async (req, res) => {
 router.patch("/admin/site-config", async (req, res) => {
   if (!checkAdminAuth(req, res)) return;
 
-  const parsed = z.object({ sellingEnabled: z.boolean() }).safeParse(req.body);
+  const parsed = z.object({
+    sellingEnabled: z.boolean().optional(),
+    marketPrice: z.number().positive().max(1000000).optional(),
+    marketCap: z.string().trim().min(1).max(40).optional(),
+  }).refine((value) => Object.keys(value).length > 0, {
+    message: "At least one setting is required.",
+  }).safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid input. Provide sellingEnabled." });
+    res.status(400).json({ error: "Provide a valid selling toggle, share price, or market cap." });
     return;
   }
 
   try {
-    const [config] = await db
-      .insert(siteConfigTable)
-      .values({ id: 1, sellingEnabled: parsed.data.sellingEnabled, updatedAt: new Date() })
-      .onConflictDoUpdate({
-        target: siteConfigTable.id,
-        set: { sellingEnabled: parsed.data.sellingEnabled, updatedAt: new Date() },
-      })
-      .returning();
+    const config = await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(siteConfigTable)
+        .where(eq(siteConfigTable.id, 1))
+        .limit(1);
 
-    res.json({ sellingEnabled: config.sellingEnabled });
+      const currentPrice = Number(existing?.marketPrice ?? "147.62");
+      const nextPrice = parsed.data.marketPrice ?? currentPrice;
+      const priceIncreased = nextPrice > currentPrice;
+      const change = nextPrice - currentPrice;
+      const changePct = currentPrice > 0 ? (change / currentPrice) * 100 : 0;
+
+      const [updated] = await tx
+        .insert(siteConfigTable)
+        .values({
+          id: 1,
+          sellingEnabled: parsed.data.sellingEnabled ?? existing?.sellingEnabled ?? false,
+          marketPrice: String(nextPrice),
+          previousMarketPrice: parsed.data.marketPrice !== undefined
+            ? String(currentPrice)
+            : existing?.previousMarketPrice ?? String(currentPrice),
+          marketCap: parsed.data.marketCap ?? existing?.marketCap ?? "$1.92T",
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: siteConfigTable.id,
+          set: {
+            ...(parsed.data.sellingEnabled !== undefined ? { sellingEnabled: parsed.data.sellingEnabled } : {}),
+            ...(parsed.data.marketPrice !== undefined ? {
+              marketPrice: String(nextPrice),
+              previousMarketPrice: String(currentPrice),
+            } : {}),
+            ...(parsed.data.marketCap !== undefined ? { marketCap: parsed.data.marketCap } : {}),
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      if (priceIncreased) {
+        const investors = await tx.select({ id: investorsTable.id }).from(investorsTable);
+        if (investors.length > 0) {
+          const message = `SPCX price update: the internal share price rose from $${currentPrice.toFixed(2)} to $${nextPrice.toFixed(2)} (+$${change.toFixed(2)}, +${changePct.toFixed(2)}%). Your portfolio values now reflect the new price.`;
+          await tx.insert(notificationsTable).values(
+            investors.map((investor) => ({ investorId: investor.id, message })),
+          );
+        }
+      }
+
+      return updated;
+    });
+
+    res.json({
+      sellingEnabled: config.sellingEnabled,
+      marketPrice: Number(config.marketPrice),
+      marketCap: config.marketCap,
+    });
   } catch (err) {
     req.log.error({ err }, "Failed to update site config");
     res.status(500).json({ error: "Something went wrong." });

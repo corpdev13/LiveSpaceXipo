@@ -1,11 +1,28 @@
-export const STOCK_BASE_PRICE = 147.62;
+import { db, siteConfigTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 /**
- * Returns the current simulated SPCX quote price. Shared by the public
- * stock-quote endpoint and the trading endpoints so buy/sell execute at the
- * same price the investor sees on screen.
+ * The persisted internal SPCX market data is shared by the public quote,
+ * history, and trading endpoints so every calculation uses the same value.
  */
-export function getCurrentStockPrice(): number {
-  const noise = (Math.random() - 0.5) * 0.2;
-  return Math.round((STOCK_BASE_PRICE + noise) * 100) / 100;
+export const STOCK_BASE_PRICE = 147.62;
+export const STOCK_BASE_MARKET_CAP = "$1.92T";
+
+export async function getMarketConfig() {
+  const [config] = await db
+    .select()
+    .from(siteConfigTable)
+    .where(eq(siteConfigTable.id, 1))
+    .limit(1);
+
+  return {
+    marketPrice: Number(config?.marketPrice ?? STOCK_BASE_PRICE),
+    previousMarketPrice: Number(config?.previousMarketPrice ?? STOCK_BASE_PRICE),
+    marketCap: config?.marketCap ?? STOCK_BASE_MARKET_CAP,
+  };
+}
+
+export async function getCurrentStockPrice(): Promise<number> {
+  const { marketPrice } = await getMarketConfig();
+  return marketPrice;
 }

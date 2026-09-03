@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db, investorsTable, holdingsTable, siteConfigTable } from "@workspace/db";
 import { BuySharesBody, SellSharesBody } from "@workspace/api-zod";
 import { eq } from "drizzle-orm";
-import { getCurrentStockPrice } from "../lib/stock";
+import { getCurrentStockPrice, getMarketConfig } from "../lib/stock";
 
 const router = Router();
 
@@ -15,7 +15,8 @@ async function getSellingEnabled(): Promise<boolean> {
 router.get("/site-config", async (req, res) => {
   try {
     const sellingEnabled = await getSellingEnabled();
-    res.json({ sellingEnabled });
+    const { marketPrice, marketCap } = await getMarketConfig();
+    res.json({ sellingEnabled, marketPrice, marketCap });
   } catch (err) {
     req.log.error({ err }, "Failed to get site config");
     res.status(500).json({ error: "Something went wrong." });
@@ -55,7 +56,7 @@ router.post("/trade/buy", async (req, res) => {
       return;
     }
 
-    const price = getCurrentStockPrice();
+    const price = await getCurrentStockPrice();
     const sharesBought = amountUsd / price;
     const existingShares = parseFloat(existing?.shares ?? "0");
     const existingAvg = parseFloat(existing?.avgCost ?? "0");
@@ -135,7 +136,7 @@ router.post("/trade/sell", async (req, res) => {
       return;
     }
 
-    const price = getCurrentStockPrice();
+    const price = await getCurrentStockPrice();
     const proceeds = sellShares * price;
     const remainingShares = ownedShares - sellShares;
     const newAvgCost = remainingShares > 0 ? parseFloat(existing?.avgCost ?? "0") : 0;

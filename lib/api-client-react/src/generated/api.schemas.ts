@@ -244,10 +244,19 @@ export interface AssistantChatResponse {
 
 export interface SiteConfig {
   sellingEnabled: boolean;
+  marketPrice: number;
+  marketCap: string;
 }
 
 export interface SiteConfigUpdate {
-  sellingEnabled: boolean;
+  sellingEnabled?: boolean;
+  /** @minimum 0.01 */
+  marketPrice?: number;
+  /**
+     * @minLength 1
+     * @maxLength 40
+     */
+  marketCap?: string;
 }
 
 export interface BuyInput {

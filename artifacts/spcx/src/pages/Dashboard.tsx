@@ -89,9 +89,9 @@ export default function Dashboard() {
           <div className="text-6xl sm:text-7xl font-bold font-display tracking-tight mb-2">
             ${quote?.price ? quote.price.toFixed(2) : '147.62'}
           </div>
-          <div className="flex items-center gap-2 text-red-500 font-display text-lg tracking-wider">
-            <span className="text-xs">▼</span>
-            <span>${quote?.change ? Math.abs(quote.change).toFixed(2) : '1.86'} ({quote?.changePct ? Math.abs(quote.changePct).toFixed(2) : '1.24'}%)</span>
+          <div className={`flex items-center gap-2 font-display text-lg tracking-wider ${(quote?.change ?? -1.86) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <span className="text-xs">{(quote?.change ?? -1.86) >= 0 ? '▲' : '▼'}</span>
+            <span>${Math.abs(quote?.change ?? -1.86).toFixed(2)} ({Math.abs(quote?.changePct ?? -1.24).toFixed(2)}%)</span>
             <span className="text-white/50 ml-2">Today</span>
           </div>
         </motion.div>

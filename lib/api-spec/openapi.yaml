@@ -1237,16 +1237,29 @@ components:
       properties:
         sellingEnabled:
           type: boolean
+        marketPrice:
+          type: number
+        marketCap:
+          type: string
       required:
         - sellingEnabled
+        - marketPrice
+        - marketCap
 
     SiteConfigUpdate:
       type: object
       properties:
         sellingEnabled:
           type: boolean
+        marketPrice:
+          type: number
+          minimum: 0.01
+        marketCap:
+          type: string
+          minLength: 1
+          maxLength: 40
       required:
-        - sellingEnabled
+        []
 
     BuyInput:
       type: object

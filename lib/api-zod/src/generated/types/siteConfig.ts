@@ -8,4 +8,6 @@
 
 export interface SiteConfig {
   sellingEnabled: boolean;
+  marketPrice: number;
+  marketCap: string;
 }

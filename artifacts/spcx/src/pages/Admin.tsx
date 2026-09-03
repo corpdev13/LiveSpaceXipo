@@ -45,7 +45,10 @@ export default function Admin() {
   const [creditPrice, setCreditPrice] = useState('');
   const [addressEdits, setAddressEdits] = useState<Record<string, string>>({});
   const [sellingEnabled, setSellingEnabled] = useState(false);
+  const [marketPrice, setMarketPrice] = useState('');
+  const [marketCap, setMarketCap] = useState('');
   const [savingConfig, setSavingConfig] = useState(false);
+  const [savingMarketData, setSavingMarketData] = useState(false);
   const [notificationEmail, setNotificationEmail] = useState('');
   const [notificationMessage, setNotificationMessage] = useState('');
   const [sendingNotification, setSendingNotification] = useState(false);
@@ -69,11 +72,13 @@ export default function Admin() {
     data.forEach((a: DepositAddress) => { edits[a.coin] = a.address; });
     setAddressEdits(edits);
   };
-  const loadSiteConfig = async () => {
+  const loadSiteConfig = async (_pw?: string) => {
     const res = await fetch('/api/site-config');
     if (!res.ok) throw new Error('Failed to load site config.');
     const data = await res.json();
     setSellingEnabled(data.sellingEnabled);
+    setMarketPrice(String(data.marketPrice ?? '147.62'));
+    setMarketCap(data.marketCap ?? '$1.92T');
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -115,6 +120,30 @@ export default function Admin() {
       toast.error(err.message);
     } finally {
       setSavingConfig(false);
+    }
+  };
+
+  const handleSaveMarketData = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsedPrice = Number(marketPrice);
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0 || !marketCap.trim()) {
+      toast.error('Enter a valid share price and market cap.');
+      return;
+    }
+
+    setSavingMarketData(true);
+    try {
+      const data = await adminFetch('/admin/site-config', password, {
+        method: 'PATCH',
+        body: JSON.stringify({ marketPrice: parsedPrice, marketCap: marketCap.trim() }),
+      });
+      setMarketPrice(String(data.marketPrice));
+      setMarketCap(data.marketCap);
+      toast.success('SPCX market data updated.');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSavingMarketData(false);
     }
   };
 
@@ -428,7 +457,48 @@ export default function Admin() {
         )}
 
         {!loading && tab === 'Trading' && (
-          <div className="max-w-md">
+          <div className="max-w-xl space-y-6">
+            <form onSubmit={handleSaveMarketData} className="border border-white/10 p-6 space-y-5">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <TrendingUp className="w-5 h-5 text-white/50" />
+                  <h2 className="font-display font-bold tracking-widest uppercase">Market Data</h2>
+                </div>
+                <p className="text-xs text-white/40 mt-2">
+                  These values are shared by the quote, trade screen, and investor portfolio calculations.
+                </p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-white/40 font-display tracking-widest uppercase mb-2">SPCX Share Price</label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={marketPrice}
+                      onChange={(e) => setMarketPrice(e.target.value)}
+                      className="w-full bg-black/50 border border-white/30 text-white pl-9 pr-5 py-4 focus:outline-none focus:border-white/80 font-display tracking-wider"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-white/40 font-display tracking-widest uppercase mb-2">Market Cap Display</label>
+                  <input
+                    type="text"
+                    value={marketCap}
+                    onChange={(e) => setMarketCap(e.target.value)}
+                    placeholder="$1.92T"
+                    maxLength={40}
+                    className="w-full bg-black/50 border border-white/30 text-white px-5 py-4 focus:outline-none focus:border-white/80 font-display tracking-wider"
+                  />
+                </div>
+              </div>
+              <button type="submit" disabled={savingMarketData} className="w-full bg-white text-black font-display font-bold text-lg tracking-widest uppercase py-4 hover:bg-white/90 disabled:opacity-50 transition-colors cursor-pointer">
+                {savingMarketData ? 'Saving...' : 'Save Market Data'}
+              </button>
+            </form>
             <div className="border border-white/10 p-6 flex items-center justify-between gap-4">
               <div className="flex items-start gap-4">
                 <TrendingUp className="w-5 h-5 text-white/50 mt-0.5 shrink-0" />
