@@ -38,7 +38,7 @@ jobs:
         env:
           NODE_ENV: production
           PORT: 4173
-          BASE_PATH: /LiveSpaceXipo/
+          BASE_PATH: /
 
       - name: Publish site to gh-pages branch
         uses: JamesIves/github-pages-deploy-action@v4
