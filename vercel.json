@@ -1,0 +1,9 @@
+{
+  "projectName": "livespaceipo",
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
+  "outputDirectory": "artifacts/api-server/dist",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "framework": "nodejs"
+}
