@@ -1,0 +1,166 @@
+name: LiveSpaceXipo - SpaceX IPO Platform
+description: |
+  Full-stack TypeScript workspace with Express API server, PostgreSQL database,
+  and investor management platform. Includes authentication, admin dashboard,
+  stock trading simulation, and withdrawal management.
+
+stack: PNPM_WORKSPACE
+
+# Build configuration
+build:
+  type: pnpm_workspace
+  commands:
+    - name: Install dependencies
+      run: pnpm install
+    - name: Typecheck all packages
+      run: pnpm run typecheck
+    - name: Build all packages
+      run: pnpm run build
+
+# Deployment configuration
+deployment:
+  target: autoscale
+  router: application
+  ports:
+    - localPort: 8080
+      externalPort: 80
+      name: web
+    - localPort: 8081
+      externalPort: 8081
+      name: debug
+    - localPort: 18613
+      externalPort: 3001
+      name: api
+
+# Runtime environment
+runtime:
+  node: "24"
+  database: postgresql-16
+  
+# Required environment variables for deployment
+environment:
+  required:
+    - PORT: "5000"
+    - DATABASE_URL: "postgres://user:password@localhost:5432/spacexipo"
+    - ADMIN_PASSWORD: "set-your-admin-password"
+  optional:
+    - NODE_ENV: "production"
+    - LOG_LEVEL: "info"
+
+# Post-build hooks
+postBuild:
+  - command: pnpm store prune
+    env:
+      CI: "true"
+
+# Services configuration
+services:
+  api:
+    package: "@workspace/api-server"
+    command: pnpm run start
+    port: 5000
+    healthcheck:
+      path: /api/health
+      interval: 30s
+      timeout: 10s
+  
+  database:
+    type: postgresql
+    version: "16"
+    volume: /var/lib/postgresql/data
+
+# Application features
+features:
+  authentication:
+    type: password-based
+    signup:
+      - Email verification
+      - Password setup with tokens
+      - Legacy investor onboarding
+    signin:
+      - Email/password authentication
+      - Session management
+    admin:
+      - Header-based password auth (x-admin-password)
+      - No OAuth required
+      - Anonymous admin access with correct password
+
+  core_api_routes:
+    - /api/health: Health check
+    - /api/signin: User authentication
+    - /api/signin/lookup: Email verification
+    - /api/password/setup: Initial password creation
+    - /api/investors: Investor profiles and data
+    - /api/holdings: Stock holdings and cash balance
+    - /api/stock: Market data and pricing
+    - /api/trade: Buy/sell stock orders
+    - /api/deposits: Crypto deposit management
+    - /api/withdrawals: Withdrawal requests
+    - /api/notifications: User notifications
+    - /api/admin: Administrative functions
+
+  admin_functions:
+    - List all investors with holdings
+    - Update investor approval status
+    - Control withdrawal access per investor
+    - Manually credit shares to investors
+    - Manage deposit addresses (BTC, ETH, DOGE)
+    - Update market price and platform config
+    - Process deposits and withdrawals
+    - Send notifications to investors
+    - View withdrawal requests
+
+# Development commands
+dev:
+  - pnpm --filter @workspace/api-server run dev
+  - pnpm run typecheck:libs
+  - pnpm --filter @workspace/db run push (for schema changes)
+
+# Database schema management
+database:
+  migrations:
+    - pnpm --filter @workspace/db run push
+  schema_location: lib/db/src
+
+# Testing
+test:
+  typecheck: pnpm run typecheck
+  build: pnpm run build
+
+# Security
+security:
+  admin_auth: x-admin-password header
+  no_oauth_required: true
+  password_hashing: bcrypt-based
+  setup_tokens: 15-minute expiry
+
+# Documentation
+docs:
+  readme: replit.md
+  api_routes: artifacts/api-server/src/routes
+  database_schema: lib/db
+  workspace_config: pnpm-workspace.yaml
+  type_definitions: tsconfig.base.json
+
+# Git hooks
+postMerge:
+  path: scripts/post-merge.sh
+  timeoutMs: 20000
+
+# Notes for Manus AI
+notes: |
+  This configuration enables Manus AI to fully build and deploy the LiveSpaceXipo platform
+  without requiring OAuth setup. All authentication flows are self-contained:
+  
+  - Anonymous users can use the admin endpoints by providing the ADMIN_PASSWORD
+  - Investors authenticate with email/password after account creation
+  - New investors are set up with password setup tokens
+  - All existing functionality (trading, deposits, withdrawals) works as configured
+  
+  Deployment steps:
+  1. Set DATABASE_URL pointing to PostgreSQL instance
+  2. Set ADMIN_PASSWORD for anonymous admin access
+  3. Run pnpm install && pnpm run build
+  4. Start with: pnpm --filter @workspace/api-server run start
+  
+  The platform is ready for use immediately after deployment.
