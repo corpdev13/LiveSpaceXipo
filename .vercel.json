@@ -1,0 +1,75 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
+  "framework": "nodejs",
+  "nodeVersion": "24.x",
+  "env": {
+    "DATABASE_URL": {
+      "description": "PostgreSQL connection string",
+      "required": true
+    },
+    "ADMIN_PASSWORD": {
+      "description": "Admin authentication password",
+      "required": true
+    },
+    "PORT": {
+      "description": "API server port",
+      "default": "5000"
+    },
+    "NODE_ENV": {
+      "description": "Node environment",
+      "default": "production"
+    },
+    "LOG_LEVEL": {
+      "description": "Logging level",
+      "default": "info"
+    }
+  },
+  "build": {
+    "env": {
+      "DATABASE_URL": "@database_url",
+      "ADMIN_PASSWORD": "@admin_password"
+    }
+  },
+  "functions": {
+    "artifacts/api-server/dist/index.mjs": {
+      "runtime": "nodejs24.x",
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "artifacts/api-server/dist/index.mjs"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "artifacts/api-server/dist/index.mjs"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization, x-admin-password"
+        }
+      ]
+    }
+  ]
+}
